@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # z_compression
 
 z_compression is a privacy-friendly Windows desktop archive utility built with C#, .NET 10, WPF, MVVM-style presentation, and a replaceable archive-engine interface. Files stay on the local computer: the application has no analytics, advertising, account system, or file-upload feature.
@@ -61,3 +62,6 @@ Update checks make the minimum request needed to GitHub's Releases API. A packag
 ## License and support
 
 z_compression is released under the [MIT License](LICENSE). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for dependencies. If the project helps you, you can support development at [Buy Me a Coffee](https://buymeacoffee.com/zernia).
+=======
+# z_compression
+>>>>>>> eb6dd237ab280bb8c761cc48f387021e76418045
