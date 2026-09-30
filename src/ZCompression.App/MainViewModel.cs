@@ -173,6 +173,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
     public void SetLanguage(string language) { Settings = Settings with { Language = language }; _localization.SetCulture(language); }
     public void SetTheme(string theme) => Settings = Settings with { Theme = theme };
+    public void SetCpuThreads(int threads) => Settings = Settings with { CpuThreads = Math.Max(0, threads) };
+    public void SetOperationPriority(string priority) => Settings = Settings with { OperationPriority = priority };
+    public void SetCheckForUpdatesAtStartup(bool enabled) => Settings = Settings with { CheckForUpdatesAtStartup = enabled };
     public Task SaveSettingsAsync() => _settingsService.SaveAsync(Settings);
 
     public string FriendlyError(Exception exception) => exception switch
@@ -184,7 +187,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     };
 
     public static bool IsArchivePath(string path) => new[] { ".zip", ".7z", ".rar", ".tar", ".gz", ".tgz", ".bz2", ".xz", ".zst" }.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
-    public static ArchiveFormat FormatFromPath(string path) => path.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".tgz", StringComparison.OrdinalIgnoreCase) ? ArchiveFormat.TarGZip : Path.GetExtension(path).ToLowerInvariant() switch { ".7z" => ArchiveFormat.SevenZip, ".tar" => ArchiveFormat.Tar, ".gz" => ArchiveFormat.GZip, _ => ArchiveFormat.Zip };
+    public static ArchiveFormat FormatFromPath(string path) => path.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".tgz", StringComparison.OrdinalIgnoreCase) ? ArchiveFormat.TarGZip : Path.GetExtension(path).ToLowerInvariant() switch { ".7z" => ArchiveFormat.SevenZip, ".rar" => ArchiveFormat.Rar, ".tar" => ArchiveFormat.Tar, ".gz" => ArchiveFormat.GZip, ".bz2" => ArchiveFormat.BZip2, ".xz" => ArchiveFormat.Xz, ".zst" => ArchiveFormat.Zstandard, _ => ArchiveFormat.Zip };
 
     private Progress<ArchiveProgress> CreateProgress() => new(value =>
     {

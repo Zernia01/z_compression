@@ -18,6 +18,9 @@ public partial class SettingsWindow : Window
         _viewModel = viewModel;
         SelectTag(LanguageBox, viewModel.Settings.Language);
         SelectTheme(viewModel.Settings.Theme);
+        SelectTag(CpuThreadsBox, viewModel.Settings.CpuThreads.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        SelectTag(PriorityBox, viewModel.Settings.OperationPriority);
+        AutomaticUpdatesBox.IsChecked = viewModel.Settings.CheckForUpdatesAtStartup;
     }
 
     private void OnCategoryChanged(object sender, RoutedEventArgs e)
@@ -43,6 +46,31 @@ public partial class SettingsWindow : Window
             _viewModel.SetTheme(tag);
             ThemeManager.Apply(tag);
         }
+    }
+
+    private void OnCpuThreadsChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (CpuThreadsBox.SelectedItem is ComboBoxItem { Tag: string value } && int.TryParse(value, out var threads))
+            _viewModel.SetCpuThreads(threads);
+    }
+
+    private void OnPriorityChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (PriorityBox.SelectedItem is ComboBoxItem { Tag: string priority })
+            _viewModel.SetOperationPriority(priority);
+    }
+
+    private void OnAutomaticUpdatesChanged(object sender, RoutedEventArgs e)
+    {
+        if (AutomaticUpdatesBox is not null)
+            _viewModel.SetCheckForUpdatesAtStartup(AutomaticUpdatesBox.IsChecked == true);
+    }
+
+    private async void OnCheckForUpdates(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button) button.IsEnabled = false;
+        try { await UpdateCoordinator.CheckAndInstallAsync(this, showUpToDateMessage: true); }
+        finally { if (sender is Button completedButton) completedButton.IsEnabled = true; }
     }
 
     private void SelectTheme(string theme)

@@ -9,6 +9,7 @@ public sealed record AppSettings
     public bool CheckForUpdatesAtStartup { get; init; } = true;
     public bool FirstRunCompleted { get; init; }
     public int CpuThreads { get; init; }
+    public string OperationPriority { get; init; } = "normal";
 }
 
 public interface ISettingsService

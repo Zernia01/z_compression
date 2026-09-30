@@ -15,6 +15,10 @@ $publishedApp = Join-Path $projectRoot 'artifacts\win-x64\z_compression.exe'
 if (-not (Test-Path -LiteralPath $publishedApp)) {
     throw '먼저 artifacts\win-x64에 win-x64 앱을 게시하세요.'
 }
+$publishedUpdater = Join-Path $projectRoot 'artifacts\win-x64\ZCompression.Updater.exe'
+if (-not (Test-Path -LiteralPath $publishedUpdater)) {
+    throw 'artifacts\win-x64에 ZCompression.Updater.exe가 없습니다. 업데이터를 먼저 게시하세요.'
+}
 
 & $compiler (Join-Path $PSScriptRoot 'z_compression.iss')
 if ($LASTEXITCODE -ne 0) { throw "Inno Setup 컴파일 실패: $LASTEXITCODE" }

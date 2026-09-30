@@ -25,6 +25,9 @@ jobs:
       - run: dotnet build z_compression.slnx -c Release --no-restore
       - run: dotnet test tests/ZCompression.Tests/ZCompression.Tests.csproj -c Release --no-build
       - run: dotnet publish src/ZCompression.App/ZCompression.App.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -o artifacts/${{ matrix.rid }}
+      - run: dotnet publish src/ZCompression.Updater/ZCompression.Updater.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -o artifacts/updater-${{ matrix.rid }}
+      - shell: pwsh
+        run: Copy-Item "artifacts/updater-${{ matrix.rid }}/ZCompression.Updater.exe" "artifacts/${{ matrix.rid }}/ZCompression.Updater.exe" -Force
       - shell: pwsh
         run: |
           Compress-Archive -Path "artifacts/${{ matrix.rid }}/*" -DestinationPath "z_compression-${{ github.ref_name }}-${{ matrix.rid }}.zip"

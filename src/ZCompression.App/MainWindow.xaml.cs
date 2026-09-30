@@ -145,6 +145,7 @@ public partial class MainWindow : Window
         try { new SettingsWindow(_viewModel) { Owner = this }.ShowDialog(); }
         finally { Effect = previousEffect; Opacity = previousOpacity; }
         await _viewModel.SaveSettingsAsync();
+        App.ApplyProcessPriority(_viewModel.Settings.OperationPriority);
     }
 
     private async Task RunUiAction(Func<Task> action)

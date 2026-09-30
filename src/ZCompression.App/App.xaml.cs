@@ -4,6 +4,7 @@ using System.Windows.Threading;
 using ZCompression.Core.Archives;
 using ZCompression.Core.Localization;
 using ZCompression.Core.Settings;
+using System.Diagnostics;
 
 namespace ZCompression.App;
 
@@ -16,6 +17,7 @@ public partial class App : Application
         CleanupOldPreviews();
         var settingsService = new JsonSettingsService();
         var settings = await settingsService.LoadAsync();
+        ApplyProcessPriority(settings.OperationPriority);
         ThemeManager.Apply(settings.Theme);
         var localization = new JsonLocalizationService(Path.Combine(AppContext.BaseDirectory, "Localization"), settings.Language);
         LocalizationManager.Instance.Initialize(localization);
@@ -40,6 +42,23 @@ public partial class App : Application
                 MessageBox.Show($"{LocalizationManager.Instance["OpenArchiveError"]}\n{exception.Message}", "z_compression", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        if (e.Args.Length == 0 && settings.CheckForUpdatesAtStartup)
+            await UpdateCoordinator.CheckAndInstallAsync(mainWindow, showUpToDateMessage: false);
+    }
+
+    internal static void ApplyProcessPriority(string priority)
+    {
+        try
+        {
+            Process.GetCurrentProcess().PriorityClass = priority.ToLowerInvariant() switch
+            {
+                "low" => ProcessPriorityClass.BelowNormal,
+                "high" => ProcessPriorityClass.AboveNormal,
+                _ => ProcessPriorityClass.Normal,
+            };
+        }
+        catch (InvalidOperationException) { }
+        catch (System.ComponentModel.Win32Exception) { }
     }
 
     private static void CleanupOldPreviews()

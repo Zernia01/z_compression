@@ -20,15 +20,29 @@ var backupDirectory = installDirectory.TrimEnd(Path.DirectorySeparatorChar) + ".
 try
 {
     if (Directory.Exists(backupDirectory)) Directory.Delete(backupDirectory, true);
-    Directory.Move(installDirectory, backupDirectory);
-    Directory.Move(packageDirectory, installDirectory);
+    CopyDirectory(installDirectory, backupDirectory, overwrite: true);
+    CopyDirectory(packageDirectory, installDirectory, overwrite: true);
     Process.Start(new ProcessStartInfo(Path.Combine(installDirectory, executableName)) { UseShellExecute = true });
     Directory.Delete(backupDirectory, true);
+    Directory.Delete(packageDirectory, true);
     return 0;
 }
-catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
 {
     Console.Error.WriteLine("Update could not be installed. The previous version will be restored.");
-    if (!Directory.Exists(installDirectory) && Directory.Exists(backupDirectory)) Directory.Move(backupDirectory, installDirectory);
+    if (Directory.Exists(backupDirectory)) CopyDirectory(backupDirectory, installDirectory, overwrite: true);
     return 1;
+}
+
+static void CopyDirectory(string source, string destination, bool overwrite)
+{
+    Directory.CreateDirectory(destination);
+    foreach (var directory in Directory.EnumerateDirectories(source, "*", SearchOption.AllDirectories))
+        Directory.CreateDirectory(Path.Combine(destination, Path.GetRelativePath(source, directory)));
+    foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
+    {
+        var target = Path.Combine(destination, Path.GetRelativePath(source, file));
+        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+        File.Copy(file, target, overwrite);
+    }
 }

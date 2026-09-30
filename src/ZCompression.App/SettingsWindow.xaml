@@ -75,6 +75,11 @@
                             <StackPanel><TextBlock Text="{local:Loc WindowsDefaultApps}" FontWeight="SemiBold"/><TextBlock Text="{local:Loc WindowsDefaultAppsDescription}" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,12,0"/></StackPanel>
                             <Button Grid.Column="1" Style="{StaticResource OutlineButton}" Content="{local:Loc SetDefaultApp}" Click="OnSetDefaultApps" VerticalAlignment="Center"/>
                         </Grid>
+                        <Grid Margin="0,20,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <StackPanel><TextBlock Text="{local:Loc AutomaticUpdates}" FontWeight="SemiBold"/><TextBlock Text="{local:Loc AutomaticUpdatesDescription}" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,12,0"/></StackPanel>
+                            <CheckBox x:Name="AutomaticUpdatesBox" Grid.Column="1" VerticalAlignment="Center" Checked="OnAutomaticUpdatesChanged" Unchecked="OnAutomaticUpdatesChanged" />
+                        </Grid>
+                        <Button Style="{StaticResource OutlineButton}" Content="{local:Loc CheckForUpdatesNow}" HorizontalAlignment="Left" Margin="0,14,0,0" Click="OnCheckForUpdates" />
                         <CheckBox Content="{local:Loc NotifyWhenComplete}" Margin="0,20,0,0" IsChecked="True" />
                     </StackPanel>
 
@@ -107,9 +112,9 @@
                         <TextBlock Text="{local:Loc PerformanceDescription}" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,7,0,26" />
                         <Separator Background="{DynamicResource BorderBrush}" />
                         <TextBlock Text="{local:Loc CpuThreads}" FontWeight="SemiBold" Margin="0,22,0,8" />
-                        <ComboBox Width="280" HorizontalAlignment="Left" SelectedIndex="0"><ComboBoxItem Content="{local:Loc Automatic}"/><ComboBoxItem>2</ComboBoxItem><ComboBoxItem>4</ComboBoxItem><ComboBoxItem>8</ComboBoxItem></ComboBox>
+                        <ComboBox x:Name="CpuThreadsBox" Width="280" HorizontalAlignment="Left" SelectionChanged="OnCpuThreadsChanged"><ComboBoxItem Tag="0" Content="{local:Loc Automatic}"/><ComboBoxItem Tag="2">2</ComboBoxItem><ComboBoxItem Tag="4">4</ComboBoxItem><ComboBoxItem Tag="8">8</ComboBoxItem></ComboBox>
                         <TextBlock Text="{local:Loc Priority}" FontWeight="SemiBold" Margin="0,24,0,8" />
-                        <ComboBox Width="280" HorizontalAlignment="Left" SelectedIndex="1"><ComboBoxItem Content="{local:Loc Low}"/><ComboBoxItem Content="{local:Loc Normal}"/><ComboBoxItem Content="{local:Loc High}"/></ComboBox>
+                        <ComboBox x:Name="PriorityBox" Width="280" HorizontalAlignment="Left" SelectionChanged="OnPriorityChanged"><ComboBoxItem Tag="low" Content="{local:Loc Low}"/><ComboBoxItem Tag="normal" Content="{local:Loc Normal}"/><ComboBoxItem Tag="high" Content="{local:Loc High}"/></ComboBox>
                         <TextBlock Text="{local:Loc StabilityHint}" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,22,0,0" />
                     </StackPanel>
 
@@ -119,7 +124,7 @@
                         <Separator Background="{DynamicResource BorderBrush}" />
                         <Image Source="/Assets/icon.png" Width="58" Height="58" HorizontalAlignment="Left" Margin="0,24,0,12"/>
                         <TextBlock Text="z_compression" FontSize="20" FontWeight="SemiBold" />
-                        <TextBlock Text="Version 1.0.2 · MIT License" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0" />
+                        <TextBlock Text="Version 1.0.3 · MIT License" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0" />
                         <TextBlock Text="{local:Loc PrivacyStatement}" Margin="0,24,0,0" />
                         <Button Style="{StaticResource AccentButton}" Content="☕  Buy Me a Coffee" HorizontalAlignment="Left" Margin="0,22,0,0" Click="OnDonate" />
                     </StackPanel>
