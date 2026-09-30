@@ -1,0 +1,65 @@
+using System.Windows;
+using System.IO;
+using System.Windows.Threading;
+using ZCompression.Core.Archives;
+using ZCompression.Core.Localization;
+using ZCompression.Core.Settings;
+
+namespace ZCompression.App;
+
+public partial class App : Application
+{
+    public App() => DispatcherUnhandledException += OnUnhandledException;
+
+    private async void OnStartup(object sender, StartupEventArgs e)
+    {
+        CleanupOldPreviews();
+        var settingsService = new JsonSettingsService();
+        var settings = await settingsService.LoadAsync();
+        ThemeManager.Apply(settings.Theme);
+        var localization = new JsonLocalizationService(Path.Combine(AppContext.BaseDirectory, "Localization"), settings.Language);
+        var viewModel = new MainViewModel(new SharpCompressArchiveEngine(), localization, settingsService, settings);
+        MainWindow = new MainWindow(viewModel);
+        MainWindow.Show();
+        if (e.Args.FirstOrDefault() is { } requestedPath && File.Exists(requestedPath) && MainViewModel.IsArchivePath(requestedPath))
+        {
+            try
+            {
+                await viewModel.OpenArchiveAsync(requestedPath);
+            }
+            catch (Exception exception)
+            {
+                MessageBox.Show($"압축 파일을 열 수 없습니다.\n{exception.Message}", "z_compression", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+    }
+
+    private static void CleanupOldPreviews()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "z_compression", "preview");
+        if (!Directory.Exists(root)) return;
+        try
+        {
+            foreach (var directory in Directory.EnumerateDirectories(root))
+            {
+                if (Directory.GetCreationTimeUtc(directory) < DateTime.UtcNow.AddDays(-2)) Directory.Delete(directory, true);
+            }
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+    }
+
+    private static void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        try
+        {
+            var directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "z_compression", "logs");
+            Directory.CreateDirectory(directory);
+            File.AppendAllText(Path.Combine(directory, "error.log"), $"{DateTimeOffset.Now:u} {e.Exception.GetType().Name} (0x{e.Exception.HResult:X8}){Environment.NewLine}");
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+        MessageBox.Show("z_compression encountered an unexpected error. Diagnostic details were written to the local log.", "z_compression", MessageBoxButton.OK, MessageBoxImage.Error);
+        e.Handled = true;
+    }
+}

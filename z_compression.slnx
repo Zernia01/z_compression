@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ZCompression.App/ZCompression.App.csproj" />
+    <Project Path="src/ZCompression.Core/ZCompression.Core.csproj" />
+    <Project Path="src/ZCompression.Update/ZCompression.Update.csproj" />
+    <Project Path="src/ZCompression.Updater/ZCompression.Updater.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ZCompression.Tests/ZCompression.Tests.csproj" />
+  </Folder>
+</Solution>
