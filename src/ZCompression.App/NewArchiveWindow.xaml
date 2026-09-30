@@ -23,13 +23,24 @@
         <Border Grid.Row="1" Margin="0,18,0,16" Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="9">
             <Grid>
                 <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                <ListView x:Name="SourceList" ItemsSource="{Binding Sources}" Background="Transparent" BorderThickness="0" SelectionMode="Extended">
+                <ListView x:Name="SourceList" ItemsSource="{Binding Sources}" Background="Transparent" Foreground="{DynamicResource PrimaryTextBrush}" BorderThickness="0" SelectionMode="Extended">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Padding" Value="3,2"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="{DynamicResource ElevatedBackgroundBrush}"/></Trigger>
+                                <Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="{DynamicResource AccentSoftBrush}"/><Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}"/></Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListView.ItemContainerStyle>
                     <ListView.View>
                         <GridView>
-                            <GridViewColumn Header="{local:Loc Name}" Width="210"><GridViewColumn.CellTemplate><DataTemplate><StackPanel Orientation="Horizontal"><TextBlock Text="{Binding Icon}" FontFamily="Segoe UI Emoji" Margin="0,0,7,0"/><TextBlock Text="{Binding Name}"/></StackPanel></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
-                            <GridViewColumn Header="{local:Loc Type}" DisplayMemberBinding="{Binding TypeText}" Width="70"/>
-                            <GridViewColumn Header="{local:Loc Size}" DisplayMemberBinding="{Binding SizeText}" Width="90"/>
-                            <GridViewColumn Header="{local:Loc Location}" DisplayMemberBinding="{Binding FullPath}" Width="310"/>
+                            <GridViewColumn Header="{local:Loc Name}" Width="210"><GridViewColumn.CellTemplate><DataTemplate><StackPanel Orientation="Horizontal"><TextBlock Text="{Binding Icon}" FontFamily="Segoe UI Emoji" Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,0,7,0"/><TextBlock Text="{Binding Name}" Foreground="{DynamicResource PrimaryTextBrush}"/></StackPanel></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+                            <GridViewColumn Header="{local:Loc Type}" Width="70"><GridViewColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding TypeText}" Foreground="{DynamicResource PrimaryTextBrush}"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+                            <GridViewColumn Header="{local:Loc Size}" Width="90"><GridViewColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding SizeText}" Foreground="{DynamicResource PrimaryTextBrush}"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+                            <GridViewColumn Header="{local:Loc Location}" Width="310"><GridViewColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding FullPath}" Foreground="{DynamicResource PrimaryTextBrush}" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
                         </GridView>
                     </ListView.View>
                 </ListView>
