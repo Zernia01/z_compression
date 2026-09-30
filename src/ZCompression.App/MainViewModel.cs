@@ -78,7 +78,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public bool CanNavigateUp => !string.IsNullOrEmpty(CurrentFolder);
     public int VisibleFolderCount => BrowserItems.Count(item => item.IsDirectory && !item.IsParent);
     public int VisibleFileCount => BrowserItems.Count(item => !item.IsDirectory);
-    public string BrowserStatus => $"파일: {VisibleFileCount:N0}, 폴더: {VisibleFolderCount:N0}, 전체 항목: {Entries.Count:N0}";
+    public string BrowserStatus => string.Format(_localization["BrowserStatus"], VisibleFileCount, VisibleFolderCount, Entries.Count);
+    public string BrowserItemCountText => string.Format(_localization["ItemCount"], BrowserItems.Count);
     public string SearchText { get => _searchText; set { if (Set(ref _searchText, value)) { FilteredEntries.Refresh(); RebuildBrowserItems(); } } }
 
     public async Task OpenArchiveAsync(string path) => await WithOperation(async token =>
@@ -157,7 +158,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         await WithOperation(async token =>
         {
-            Status = $"{item.Name} 여는 중…";
+            Status = string.Format(_localization["OpeningFile"], item.Name);
             await _engine.ExtractEntryAsync(CurrentArchivePath, item.Path, destination, cancellationToken: token);
             Status = _localization["Ready"];
         });
@@ -189,13 +190,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         ProgressPercent = value.Percent;
         CurrentOperationFile = value.CurrentFile;
-        OperationCounts = $"{value.CompletedFiles:N0} / {value.TotalFiles:N0}개 항목";
+        OperationCounts = string.Format(_localization["ProgressCount"], value.CompletedFiles, value.TotalFiles);
         ProcessedText = $"{FormatBytes(value.ProcessedBytes)} / {FormatBytes(value.TotalBytes)}";
         SpeedText = $"{FormatBytes(value.BytesPerSecond)}/s";
         ElapsedText = FormatDuration(value.Elapsed);
         var remaining = value.Percent > 0 && value.Percent < 100
             ? TimeSpan.FromTicks((long)(value.Elapsed.Ticks * (100d - value.Percent) / value.Percent)) : TimeSpan.Zero;
-        RemainingText = remaining > TimeSpan.Zero ? FormatDuration(remaining) : "계산 중";
+        RemainingText = remaining > TimeSpan.Zero ? FormatDuration(remaining) : _localization["Calculating"];
         ProgressDetails = $"{OperationCounts} · {SpeedText} · {value.CurrentFile}";
     });
     private void RebuildBrowserItems()
@@ -230,7 +231,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         var ordered = BrowserItems.OrderByDescending(item => item.IsParent).ThenByDescending(item => item.IsDirectory).ThenBy(item => item.Name, StringComparer.CurrentCultureIgnoreCase).ToArray();
         BrowserItems.Clear(); foreach (var item in ordered) BrowserItems.Add(item);
-        OnPropertyChanged(nameof(VisibleFolderCount)); OnPropertyChanged(nameof(VisibleFileCount)); OnPropertyChanged(nameof(BrowserStatus));
+        OnPropertyChanged(nameof(VisibleFolderCount)); OnPropertyChanged(nameof(VisibleFileCount)); OnPropertyChanged(nameof(BrowserStatus)); OnPropertyChanged(nameof(BrowserItemCountText));
     }
 
     private bool MatchesSearch(string name) => string.IsNullOrWhiteSpace(SearchText) || name.Contains(SearchText, StringComparison.CurrentCultureIgnoreCase);
@@ -238,13 +239,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         if (IsBusy) return;
         using var cancellation = new CancellationTokenSource(); _cancellation = cancellation; IsBusy = true; ProgressPercent = 0;
-        CurrentOperationFile = "준비 중…"; OperationCounts = "항목 확인 중"; ProcessedText = "0 B"; SpeedText = "0 B/s"; ElapsedText = "00:00"; RemainingText = "계산 중";
+        CurrentOperationFile = _localization["Preparing"]; OperationCounts = _localization["CheckingItems"]; ProcessedText = "0 B"; SpeedText = "0 B/s"; ElapsedText = "00:00"; RemainingText = _localization["Calculating"];
         try { await operation(cancellation.Token); }
         finally { IsBusy = false; _cancellation = null; }
     }
     private static string FormatBytes(double value) { string[] units = ["B", "KB", "MB", "GB"]; var i = 0; while (value >= 1024 && i < units.Length - 1) { value /= 1024; i++; } return $"{value:0.0} {units[i]}"; }
     private static string FormatDuration(TimeSpan value) => value.TotalHours >= 1 ? value.ToString(@"hh\:mm\:ss") : value.ToString(@"mm\:ss");
-    private void NotifyLocalized() { foreach (var name in new[] { nameof(Subtitle), nameof(NewArchiveText), nameof(ExtractText), nameof(OpenText), nameof(TestText), nameof(SettingsText), nameof(DropText), nameof(DropHint), nameof(CancelText) }) OnPropertyChanged(name); }
+    private void NotifyLocalized() { foreach (var name in new[] { nameof(Subtitle), nameof(NewArchiveText), nameof(ExtractText), nameof(OpenText), nameof(TestText), nameof(SettingsText), nameof(DropText), nameof(DropHint), nameof(CancelText), nameof(BrowserStatus), nameof(BrowserItemCountText) }) OnPropertyChanged(name); RebuildBrowserItems(); }
     private bool Set<T>(ref T field, T value, [CallerMemberName] string? name = null)
     {
         if (EqualityComparer<T>.Default.Equals(field, value)) return false;

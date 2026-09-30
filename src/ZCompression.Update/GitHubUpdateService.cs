@@ -7,7 +7,7 @@ namespace ZCompression.Update;
 
 public sealed class GitHubUpdateService(HttpClient httpClient, string owner, string repository) : IUpdateService
 {
-    public const string DefaultOwner = "zernia";
+    public const string DefaultOwner = "zernia01";
     public const string DefaultRepository = "z_compression";
 
     public async Task<UpdateCheckResult> CheckAsync(Version currentVersion, CancellationToken cancellationToken = default)

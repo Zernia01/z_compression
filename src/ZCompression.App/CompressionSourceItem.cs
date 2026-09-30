@@ -3,7 +3,7 @@ namespace ZCompression.App;
 public sealed record CompressionSourceItem(string FullPath, string Name, bool IsDirectory, long Size)
 {
     public string Icon => IsDirectory ? "📁" : "📄";
-    public string TypeText => IsDirectory ? "폴더" : "파일";
+    public string TypeText => IsDirectory ? LocalizationManager.Instance["Folder"] : LocalizationManager.Instance["File"];
     public string SizeText => IsDirectory ? "—" : FormatSize(Size);
 
     private static string FormatSize(double value)

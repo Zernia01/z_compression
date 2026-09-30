@@ -14,11 +14,12 @@ public sealed record ArchiveBrowserItem(
     ArchiveEntryInfo? Entry)
 {
     public string Icon => IsParent ? "📁" : IsDirectory ? "📂" : "📄";
-    public string TypeText => IsParent ? "상위 폴더" : IsDirectory ? "파일 폴더" : GetTypeText(Name);
+    public string TypeText => IsParent ? L["ParentFolder"] : IsDirectory ? L["FileFolder"] : GetTypeText(Name);
+    private static LocalizationManager L => LocalizationManager.Instance;
 
     private static string GetTypeText(string name)
     {
         var extension = System.IO.Path.GetExtension(name);
-        return string.IsNullOrWhiteSpace(extension) ? "파일" : $"{extension.TrimStart('.').ToUpperInvariant()} 파일";
+        return string.IsNullOrWhiteSpace(extension) ? L["File"] : string.Format(L["FileFormat"], extension.TrimStart('.').ToUpperInvariant());
     }
 }

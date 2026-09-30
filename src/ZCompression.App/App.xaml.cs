@@ -18,6 +18,7 @@ public partial class App : Application
         var settings = await settingsService.LoadAsync();
         ThemeManager.Apply(settings.Theme);
         var localization = new JsonLocalizationService(Path.Combine(AppContext.BaseDirectory, "Localization"), settings.Language);
+        LocalizationManager.Instance.Initialize(localization);
         var viewModel = new MainViewModel(new SharpCompressArchiveEngine(), localization, settingsService, settings);
         MainWindow = new MainWindow(viewModel);
         MainWindow.Show();
@@ -29,7 +30,7 @@ public partial class App : Application
             }
             catch (Exception exception)
             {
-                MessageBox.Show($"압축 파일을 열 수 없습니다.\n{exception.Message}", "z_compression", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"{LocalizationManager.Instance["OpenArchiveError"]}\n{exception.Message}", "z_compression", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }
@@ -59,7 +60,7 @@ public partial class App : Application
         }
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
-        MessageBox.Show("z_compression encountered an unexpected error. Diagnostic details were written to the local log.", "z_compression", MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show(LocalizationManager.Instance["UnexpectedErrorLog"], "z_compression", MessageBoxButton.OK, MessageBoxImage.Error);
         e.Handled = true;
     }
 }

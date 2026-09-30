@@ -63,13 +63,13 @@ public partial class SettingsWindow : Window
     {
         try
         {
-            var executable = Environment.ProcessPath ?? throw new InvalidOperationException("실행 파일 경로를 확인할 수 없습니다.");
+            var executable = Environment.ProcessPath ?? throw new InvalidOperationException(LocalizationManager.Instance["UnexpectedError"]);
             FileAssociationService.RegisterCurrentUser(executable);
             FileAssociationService.OpenDefaultAppsSettings();
         }
         catch (Exception exception)
         {
-            MessageBox.Show($"기본 앱 설정을 열 수 없습니다.\n{exception.Message}", "z_compression", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"{LocalizationManager.Instance["DefaultAppsError"]}\n{exception.Message}", "z_compression", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 

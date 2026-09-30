@@ -28,15 +28,15 @@ public partial class MainWindow : Window
             if (archive.ShowDialog(this) != true) return;
             archivePath = archive.FileName;
         }
-        var destination = SelectFolder("Select extraction destination");
-        if (destination is not null) await RunWithProgressAsync("압축 풀기", Path.GetFileName(archivePath), true, () => _viewModel.ExtractAsync(archivePath, destination));
+        var destination = SelectFolder(LocalizationManager.Instance["SelectExtractionDestination"]);
+        if (destination is not null) await RunWithProgressAsync(LocalizationManager.Instance["ExtractAction"], Path.GetFileName(archivePath), true, () => _viewModel.ExtractAsync(archivePath, destination));
     }
 
     private async void OnNewArchive(object sender, RoutedEventArgs e)
     {
         var dialog = new NewArchiveWindow { Owner = this };
         if (dialog.ShowDialog() == true)
-            await RunWithProgressAsync("압축하기", Path.GetFileName(dialog.DestinationPath), false,
+            await RunWithProgressAsync(LocalizationManager.Instance["CompressAction"], Path.GetFileName(dialog.DestinationPath), false,
                 () => _viewModel.CompressAsync(dialog.SelectedSources, dialog.DestinationPath, dialog.SelectedFormat, dialog.SelectedLevel));
     }
 
@@ -61,7 +61,7 @@ public partial class MainWindow : Window
         {
             var dialog = new NewArchiveWindow(paths) { Owner = this };
             if (dialog.ShowDialog() == true)
-                await RunWithProgressAsync("압축하기", Path.GetFileName(dialog.DestinationPath), false,
+                await RunWithProgressAsync(LocalizationManager.Instance["CompressAction"], Path.GetFileName(dialog.DestinationPath), false,
                     () => _viewModel.CompressAsync(dialog.SelectedSources, dialog.DestinationPath, dialog.SelectedFormat, dialog.SelectedLevel));
         }
     }
@@ -79,8 +79,8 @@ public partial class MainWindow : Window
         if (MainViewModel.IsPotentiallyExecutable(item.Name))
         {
             var result = MessageBox.Show(this,
-                "압축 파일 안의 실행 가능한 파일은 컴퓨터에 위험할 수 있습니다. 신뢰할 수 있는 파일인 경우에만 여세요.\n\n계속 여시겠습니까?",
-                "실행 파일 열기 경고", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+                LocalizationManager.Instance["ExecutableWarning"],
+                LocalizationManager.Instance["ExecutableWarningTitle"], MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
             if (result != MessageBoxResult.Yes) return;
         }
         await RunUiAction(async () =>
@@ -124,6 +124,6 @@ public partial class MainWindow : Window
         finally { progressWindow.Finish(); }
     }
 
-    private static OpenFileDialog ArchiveOpenDialog() => new() { Filter = "Archives|*.zip;*.7z;*.rar;*.tar;*.gz;*.tgz;*.bz2;*.xz;*.zst|All files|*.*", CheckFileExists = true };
+    private static OpenFileDialog ArchiveOpenDialog() => new() { Filter = $"{LocalizationManager.Instance["Archives"]}|*.zip;*.7z;*.rar;*.tar;*.gz;*.tgz;*.bz2;*.xz;*.zst|{LocalizationManager.Instance["AllFiles"]}|*.*", CheckFileExists = true };
     private static string? SelectFolder(string title) { var dialog = new OpenFolderDialog { Title = title }; return dialog.ShowDialog() == true ? dialog.FolderName : null; }
 }

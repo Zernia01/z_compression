@@ -35,7 +35,7 @@ internal static class FileAssociationService
         using (var capabilities = Registry.CurrentUser.CreateSubKey(CapabilitiesPath))
         {
             capabilities.SetValue("ApplicationName", RegisteredApplicationName, RegistryValueKind.String);
-            capabilities.SetValue("ApplicationDescription", "빠르고 안전한 Windows 압축 및 압축 해제 프로그램", RegistryValueKind.String);
+            capabilities.SetValue("ApplicationDescription", LocalizationManager.Instance["Subtitle"], RegistryValueKind.String);
         }
         using (var associations = Registry.CurrentUser.CreateSubKey($@"{CapabilitiesPath}\FileAssociations"))
             foreach (var extension in SupportedExtensions)

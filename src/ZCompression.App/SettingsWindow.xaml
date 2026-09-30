@@ -1,7 +1,8 @@
 <Window x:Class="ZCompression.App.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="z_compression 설정" Width="820" Height="570" MinWidth="760" MinHeight="520"
+        xmlns:local="clr-namespace:ZCompression.App"
+        Title="{local:Loc SettingsTitle}" Width="820" Height="570" MinWidth="760" MinHeight="520"
         WindowStartupLocation="CenterOwner" Background="Transparent" Foreground="{DynamicResource PrimaryTextBrush}"
         ResizeMode="NoResize" WindowStyle="None" AllowsTransparency="True" MouseLeftButtonDown="OnWindowMouseDown">
     <Window.Resources>
@@ -34,19 +35,19 @@
             <Border Background="{DynamicResource ElevatedBackgroundBrush}" CornerRadius="14,0,0,14" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
                 <Grid>
                     <Grid.RowDefinitions><RowDefinition Height="72" /><RowDefinition Height="*" /></Grid.RowDefinitions>
-                    <TextBlock Text="설정" FontSize="20" FontWeight="SemiBold" Margin="22,22,0,0" />
+                    <TextBlock Text="{local:Loc Settings}" FontSize="20" FontWeight="SemiBold" Margin="22,22,0,0" />
                     <StackPanel Grid.Row="1">
                         <Button x:Name="GeneralNav" Style="{StaticResource SettingsNav}" CommandParameter="general" Click="OnCategoryChanged">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="⚙️" FontFamily="Segoe UI Emoji" Width="28" FontSize="15"/><TextBlock Text="일반"/></StackPanel>
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="⚙️" FontFamily="Segoe UI Emoji" Width="28" FontSize="15"/><TextBlock Text="{local:Loc General}"/></StackPanel>
                         </Button>
                         <Button x:Name="AppearanceNav" Style="{StaticResource SettingsNav}" Tag="Selected" CommandParameter="appearance" Click="OnCategoryChanged">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="🎨" FontFamily="Segoe UI Emoji" Width="28" FontSize="15"/><TextBlock Text="모양"/></StackPanel>
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="🎨" FontFamily="Segoe UI Emoji" Width="28" FontSize="15"/><TextBlock Text="{local:Loc Appearance}"/></StackPanel>
                         </Button>
                         <Button x:Name="PerformanceNav" Style="{StaticResource SettingsNav}" CommandParameter="performance" Click="OnCategoryChanged">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="⚡" FontFamily="Segoe UI Emoji" Width="28" FontSize="15"/><TextBlock Text="성능"/></StackPanel>
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="⚡" FontFamily="Segoe UI Emoji" Width="28" FontSize="15"/><TextBlock Text="{local:Loc Performance}"/></StackPanel>
                         </Button>
                         <Button x:Name="AboutNav" Style="{StaticResource SettingsNav}" CommandParameter="about" Click="OnCategoryChanged">
-                            <StackPanel Orientation="Horizontal"><TextBlock Text="ℹ️" FontFamily="Segoe UI Emoji" Width="28" FontSize="15"/><TextBlock Text="정보"/></StackPanel>
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="ℹ️" FontFamily="Segoe UI Emoji" Width="28" FontSize="15"/><TextBlock Text="{local:Loc About}"/></StackPanel>
                         </Button>
                     </StackPanel>
                 </Grid>
@@ -58,67 +59,67 @@
 
                 <Grid Grid.Row="1" Margin="38,8,38,34">
                     <StackPanel x:Name="GeneralPanel" Visibility="Collapsed">
-                        <TextBlock Text="일반" FontSize="23" FontWeight="SemiBold" />
-                        <TextBlock Text="기본 동작과 표시 언어를 설정합니다." Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,7,0,26" />
+                        <TextBlock Text="{local:Loc General}" FontSize="23" FontWeight="SemiBold" />
+                        <TextBlock Text="{local:Loc GeneralDescription}" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,7,0,26" />
                         <Separator Background="{DynamicResource BorderBrush}" />
-                        <TextBlock Text="언어" FontWeight="SemiBold" Margin="0,22,0,8" />
+                        <TextBlock Text="{local:Loc Language}" FontWeight="SemiBold" Margin="0,22,0,8" />
                         <ComboBox x:Name="LanguageBox" Width="280" HorizontalAlignment="Left" SelectionChanged="OnLanguageChanged">
                             <ComboBoxItem Tag="auto">시스템 기본값</ComboBoxItem><ComboBoxItem Tag="ko-KR">한국어</ComboBoxItem>
                             <ComboBoxItem Tag="en-US">English</ComboBoxItem><ComboBoxItem Tag="ja-JP">日本語</ComboBoxItem>
                             <ComboBoxItem Tag="zh-CN">简体中文</ComboBoxItem><ComboBoxItem Tag="zh-TW">繁體中文</ComboBoxItem><ComboBoxItem Tag="ko-Hanja">國漢文混用文</ComboBoxItem>
                         </ComboBox>
-                        <TextBlock Text="기본 압축 형식" FontWeight="SemiBold" Margin="0,24,0,8" />
+                        <TextBlock Text="{local:Loc DefaultFormat}" FontWeight="SemiBold" Margin="0,24,0,8" />
                         <ComboBox Width="280" HorizontalAlignment="Left" SelectedIndex="0"><ComboBoxItem>ZIP</ComboBoxItem><ComboBoxItem>7Z</ComboBoxItem><ComboBoxItem>TAR.GZ</ComboBoxItem></ComboBox>
                         <Grid Margin="0,24,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <StackPanel><TextBlock Text="Windows 기본 앱" FontWeight="SemiBold"/><TextBlock Text="지원 압축 형식의 연결을 등록하고 선택 화면을 엽니다." FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,12,0"/></StackPanel>
-                            <Button Grid.Column="1" Style="{StaticResource OutlineButton}" Content="기본 앱으로 설정" Click="OnSetDefaultApps" VerticalAlignment="Center"/>
+                            <StackPanel><TextBlock Text="{local:Loc WindowsDefaultApps}" FontWeight="SemiBold"/><TextBlock Text="{local:Loc WindowsDefaultAppsDescription}" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,12,0"/></StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource OutlineButton}" Content="{local:Loc SetDefaultApp}" Click="OnSetDefaultApps" VerticalAlignment="Center"/>
                         </Grid>
-                        <CheckBox Content="작업 완료 후 알림 표시" Margin="0,20,0,0" IsChecked="True" />
+                        <CheckBox Content="{local:Loc NotifyWhenComplete}" Margin="0,20,0,0" IsChecked="True" />
                     </StackPanel>
 
                     <StackPanel x:Name="AppearancePanel">
-                        <TextBlock Text="모양" FontSize="23" FontWeight="SemiBold" />
-                        <TextBlock Text="z_compression의 화면과 분위기를 설정합니다." Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,7,0,26" />
+                        <TextBlock Text="{local:Loc Appearance}" FontSize="23" FontWeight="SemiBold" />
+                        <TextBlock Text="{local:Loc AppearanceDescription}" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,7,0,26" />
                         <Separator Background="{DynamicResource BorderBrush}" />
-                        <TextBlock Text="앱 테마" FontWeight="SemiBold" Margin="0,22,0,12" />
+                        <TextBlock Text="{local:Loc AppTheme}" FontWeight="SemiBold" Margin="0,22,0,12" />
                         <StackPanel Orientation="Horizontal">
                             <RadioButton x:Name="SystemTheme" GroupName="Theme" Tag="system" Style="{StaticResource ThemeChoice}" Checked="OnThemeChanged">
-                                <StackPanel><TextBlock Text="🖥️" FontFamily="Segoe UI Emoji" FontSize="22" HorizontalAlignment="Center"/><TextBlock Text="시스템" Margin="0,10,0,0" HorizontalAlignment="Center"/></StackPanel>
+                                <StackPanel><TextBlock Text="🖥️" FontFamily="Segoe UI Emoji" FontSize="22" HorizontalAlignment="Center"/><TextBlock Text="{local:Loc SystemTheme}" Margin="0,10,0,0" HorizontalAlignment="Center"/></StackPanel>
                             </RadioButton>
                             <RadioButton x:Name="LightTheme" GroupName="Theme" Tag="light" Style="{StaticResource ThemeChoice}" Checked="OnThemeChanged">
-                                <StackPanel><TextBlock Text="☀️" FontFamily="Segoe UI Emoji" FontSize="22" HorizontalAlignment="Center"/><TextBlock Text="라이트" Margin="0,10,0,0" HorizontalAlignment="Center"/></StackPanel>
+                                <StackPanel><TextBlock Text="☀️" FontFamily="Segoe UI Emoji" FontSize="22" HorizontalAlignment="Center"/><TextBlock Text="{local:Loc LightTheme}" Margin="0,10,0,0" HorizontalAlignment="Center"/></StackPanel>
                             </RadioButton>
                             <RadioButton x:Name="DarkTheme" GroupName="Theme" Tag="dark" Style="{StaticResource ThemeChoice}" Checked="OnThemeChanged">
-                                <StackPanel><TextBlock Text="🌙" FontFamily="Segoe UI Emoji" FontSize="22" HorizontalAlignment="Center"/><TextBlock Text="다크" Margin="0,10,0,0" HorizontalAlignment="Center"/></StackPanel>
+                                <StackPanel><TextBlock Text="🌙" FontFamily="Segoe UI Emoji" FontSize="22" HorizontalAlignment="Center"/><TextBlock Text="{local:Loc DarkTheme}" Margin="0,10,0,0" HorizontalAlignment="Center"/></StackPanel>
                             </RadioButton>
                         </StackPanel>
                         <Separator Background="{DynamicResource BorderBrush}" Margin="0,20" />
-                        <TextBlock Text="인터페이스" FontWeight="SemiBold" />
+                        <TextBlock Text="{local:Loc Interface}" FontWeight="SemiBold" />
                         <Grid Margin="0,16,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <StackPanel><TextBlock Text="애니메이션 줄이기"/><TextBlock Text="화면 전환 효과를 최소화합니다." FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,0,0"/></StackPanel>
+                            <StackPanel><TextBlock Text="{local:Loc ReduceAnimations}"/><TextBlock Text="{local:Loc ReduceAnimationsDescription}" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,0,0"/></StackPanel>
                             <CheckBox Grid.Column="1" VerticalAlignment="Center" />
                         </Grid>
                     </StackPanel>
 
                     <StackPanel x:Name="PerformancePanel" Visibility="Collapsed">
-                        <TextBlock Text="성능" FontSize="23" FontWeight="SemiBold" />
-                        <TextBlock Text="압축 작업에 사용할 시스템 자원을 조정합니다." Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,7,0,26" />
+                        <TextBlock Text="{local:Loc Performance}" FontSize="23" FontWeight="SemiBold" />
+                        <TextBlock Text="{local:Loc PerformanceDescription}" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,7,0,26" />
                         <Separator Background="{DynamicResource BorderBrush}" />
-                        <TextBlock Text="CPU 스레드" FontWeight="SemiBold" Margin="0,22,0,8" />
-                        <ComboBox Width="280" HorizontalAlignment="Left" SelectedIndex="0"><ComboBoxItem>자동</ComboBoxItem><ComboBoxItem>2</ComboBoxItem><ComboBoxItem>4</ComboBoxItem><ComboBoxItem>8</ComboBoxItem></ComboBox>
-                        <TextBlock Text="작업 우선순위" FontWeight="SemiBold" Margin="0,24,0,8" />
-                        <ComboBox Width="280" HorizontalAlignment="Left" SelectedIndex="1"><ComboBoxItem>낮음</ComboBoxItem><ComboBoxItem>보통</ComboBoxItem><ComboBoxItem>높음</ComboBoxItem></ComboBox>
-                        <TextBlock Text="안정성을 위해 기본값 사용을 권장합니다." Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,22,0,0" />
+                        <TextBlock Text="{local:Loc CpuThreads}" FontWeight="SemiBold" Margin="0,22,0,8" />
+                        <ComboBox Width="280" HorizontalAlignment="Left" SelectedIndex="0"><ComboBoxItem Content="{local:Loc Automatic}"/><ComboBoxItem>2</ComboBoxItem><ComboBoxItem>4</ComboBoxItem><ComboBoxItem>8</ComboBoxItem></ComboBox>
+                        <TextBlock Text="{local:Loc Priority}" FontWeight="SemiBold" Margin="0,24,0,8" />
+                        <ComboBox Width="280" HorizontalAlignment="Left" SelectedIndex="1"><ComboBoxItem Content="{local:Loc Low}"/><ComboBoxItem Content="{local:Loc Normal}"/><ComboBoxItem Content="{local:Loc High}"/></ComboBox>
+                        <TextBlock Text="{local:Loc StabilityHint}" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,22,0,0" />
                     </StackPanel>
 
                     <StackPanel x:Name="AboutPanel" Visibility="Collapsed">
-                        <TextBlock Text="정보" FontSize="23" FontWeight="SemiBold" />
-                        <TextBlock Text="버전, 개인정보 및 오픈소스 정보를 확인합니다." Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,7,0,26" />
+                        <TextBlock Text="{local:Loc About}" FontSize="23" FontWeight="SemiBold" />
+                        <TextBlock Text="{local:Loc AboutDescription}" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,7,0,26" />
                         <Separator Background="{DynamicResource BorderBrush}" />
                         <Image Source="/Assets/icon.png" Width="58" Height="58" HorizontalAlignment="Left" Margin="0,24,0,12"/>
                         <TextBlock Text="z_compression" FontSize="20" FontWeight="SemiBold" />
-                        <TextBlock Text="Version 1.0.0 · MIT License" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0" />
-                        <TextBlock Text="분석, 광고, 파일 업로드 없이 로컬에서만 동작합니다." Margin="0,24,0,0" />
+                        <TextBlock Text="Version 1.0.1 · MIT License" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0" />
+                        <TextBlock Text="{local:Loc PrivacyStatement}" Margin="0,24,0,0" />
                         <Button Style="{StaticResource AccentButton}" Content="☕  Buy Me a Coffee" HorizontalAlignment="Left" Margin="0,22,0,0" Click="OnDonate" />
                     </StackPanel>
                 </Grid>
