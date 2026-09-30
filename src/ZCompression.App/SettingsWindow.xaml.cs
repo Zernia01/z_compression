@@ -2,12 +2,15 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 
 namespace ZCompression.App;
 
 public partial class SettingsWindow : Window
 {
     private readonly MainViewModel _viewModel;
+    private bool _isClosing;
 
     public SettingsWindow(MainViewModel viewModel)
     {
@@ -56,6 +59,15 @@ public partial class SettingsWindow : Window
         if (e.LeftButton == MouseButtonState.Pressed && e.GetPosition(this).Y < 58) DragMove();
     }
 
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        Opacity = 0;
+        BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180)));
+        var scale = (ScaleTransform)SettingsCard.RenderTransform;
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(0.97, 1, TimeSpan.FromMilliseconds(180)));
+        scale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(0.97, 1, TimeSpan.FromMilliseconds(180)));
+    }
+
     private void OnDonate(object sender, RoutedEventArgs e) =>
         Process.Start(new ProcessStartInfo("https://buymeacoffee.com/zernia") { UseShellExecute = true });
 
@@ -73,5 +85,15 @@ public partial class SettingsWindow : Window
         }
     }
 
-    private void OnDone(object sender, RoutedEventArgs e) => Close();
+    private void OnDone(object sender, RoutedEventArgs e)
+    {
+        if (_isClosing) return;
+        _isClosing = true;
+        var fade = new DoubleAnimation(Opacity, 0, TimeSpan.FromMilliseconds(150));
+        fade.Completed += (_, _) => Close();
+        BeginAnimation(OpacityProperty, fade);
+        var scale = (ScaleTransform)SettingsCard.RenderTransform;
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(1, 0.97, TimeSpan.FromMilliseconds(150)));
+        scale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(1, 0.97, TimeSpan.FromMilliseconds(150)));
+    }
 }

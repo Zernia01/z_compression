@@ -20,8 +20,15 @@ public partial class App : Application
         var localization = new JsonLocalizationService(Path.Combine(AppContext.BaseDirectory, "Localization"), settings.Language);
         LocalizationManager.Instance.Initialize(localization);
         var viewModel = new MainViewModel(new SharpCompressArchiveEngine(), localization, settingsService, settings);
-        MainWindow = new MainWindow(viewModel);
-        MainWindow.Show();
+        var mainWindow = new MainWindow(viewModel);
+        MainWindow = mainWindow;
+        mainWindow.Show();
+        if (e.Args.FirstOrDefault()?.Equals("--compress", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            var sources = e.Args.Skip(1).Where(path => File.Exists(path) || Directory.Exists(path)).ToArray();
+            await mainWindow.CreateArchiveFromSourcesAsync(sources);
+            return;
+        }
         if (e.Args.FirstOrDefault() is { } requestedPath && File.Exists(requestedPath) && MainViewModel.IsArchivePath(requestedPath))
         {
             try

@@ -4,7 +4,7 @@
         xmlns:local="clr-namespace:ZCompression.App"
         Title="{local:Loc SettingsTitle}" Width="820" Height="570" MinWidth="760" MinHeight="520"
         WindowStartupLocation="CenterOwner" Background="Transparent" Foreground="{DynamicResource PrimaryTextBrush}"
-        ResizeMode="NoResize" WindowStyle="None" AllowsTransparency="True" MouseLeftButtonDown="OnWindowMouseDown">
+        ResizeMode="NoResize" WindowStyle="None" AllowsTransparency="True" MouseLeftButtonDown="OnWindowMouseDown" Loaded="OnLoaded">
     <Window.Resources>
         <Style x:Key="SettingsNav" TargetType="Button" BasedOn="{StaticResource NavButton}">
             <Setter Property="Margin" Value="12,3" /><Setter Property="Padding" Value="13,10" />
@@ -28,7 +28,8 @@
         </Style>
     </Window.Resources>
 
-    <Border Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="14">
+    <Border x:Name="SettingsCard" Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="14" RenderTransformOrigin="0.5,0.5">
+        <Border.RenderTransform><ScaleTransform ScaleX="0.97" ScaleY="0.97"/></Border.RenderTransform>
         <Grid>
             <Grid.ColumnDefinitions><ColumnDefinition Width="186" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
 
@@ -118,7 +119,7 @@
                         <Separator Background="{DynamicResource BorderBrush}" />
                         <Image Source="/Assets/icon.png" Width="58" Height="58" HorizontalAlignment="Left" Margin="0,24,0,12"/>
                         <TextBlock Text="z_compression" FontSize="20" FontWeight="SemiBold" />
-                        <TextBlock Text="Version 1.0.1 · MIT License" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0" />
+                        <TextBlock Text="Version 1.0.2 · MIT License" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0" />
                         <TextBlock Text="{local:Loc PrivacyStatement}" Margin="0,24,0,0" />
                         <Button Style="{StaticResource AccentButton}" Content="☕  Buy Me a Coffee" HorizontalAlignment="Left" Margin="0,22,0,0" Click="OnDonate" />
                     </StackPanel>

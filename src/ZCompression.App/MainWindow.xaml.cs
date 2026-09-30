@@ -4,6 +4,8 @@ using System.Windows.Media.Effects;
 using System.Windows.Input;
 using System.Diagnostics;
 using System.IO;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 
 namespace ZCompression.App;
 
@@ -11,6 +13,8 @@ public partial class MainWindow : Window
 {
     private readonly MainViewModel _viewModel;
     private bool _sidebarCollapsed;
+    private bool _detailsVisible = true;
+    private bool _detailsAnimating;
     public MainWindow(MainViewModel viewModel) { InitializeComponent(); DataContext = _viewModel = viewModel; }
 
     private async void OnOpen(object sender, RoutedEventArgs e)
@@ -32,9 +36,11 @@ public partial class MainWindow : Window
         if (destination is not null) await RunWithProgressAsync(LocalizationManager.Instance["ExtractAction"], Path.GetFileName(archivePath), true, () => _viewModel.ExtractAsync(archivePath, destination));
     }
 
-    private async void OnNewArchive(object sender, RoutedEventArgs e)
+    private async void OnNewArchive(object sender, RoutedEventArgs e) => await CreateArchiveFromSourcesAsync();
+
+    public async Task CreateArchiveFromSourcesAsync(IEnumerable<string>? initialSources = null)
     {
-        var dialog = new NewArchiveWindow { Owner = this };
+        var dialog = new NewArchiveWindow(initialSources) { Owner = this };
         if (dialog.ShowDialog() == true)
             await RunWithProgressAsync(LocalizationManager.Instance["CompressAction"], Path.GetFileName(dialog.DestinationPath), false,
                 () => _viewModel.CompressAsync(dialog.SelectedSources, dialog.DestinationPath, dialog.SelectedFormat, dialog.SelectedLevel));
@@ -59,17 +65,49 @@ public partial class MainWindow : Window
         if (paths.Length == 1 && MainViewModel.IsArchivePath(paths[0])) await RunUiAction(() => _viewModel.OpenArchiveAsync(paths[0]));
         else
         {
-            var dialog = new NewArchiveWindow(paths) { Owner = this };
-            if (dialog.ShowDialog() == true)
-                await RunWithProgressAsync(LocalizationManager.Instance["CompressAction"], Path.GetFileName(dialog.DestinationPath), false,
-                    () => _viewModel.CompressAsync(dialog.SelectedSources, dialog.DestinationPath, dialog.SelectedFormat, dialog.SelectedLevel));
+            await CreateArchiveFromSourcesAsync(paths);
         }
     }
 
     private void OnDragOver(object sender, DragEventArgs e) => e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
     private void OnCancel(object sender, RoutedEventArgs e) => _viewModel.Cancel();
     private void OnHome(object sender, RoutedEventArgs e) => _viewModel.ClearArchive();
-    private void OnCloseDetails(object sender, RoutedEventArgs e) => _viewModel.SelectedEntry = null;
+    private void OnCloseDetails(object sender, RoutedEventArgs e) => SetDetailsVisible(false);
+    private void OnToggleDetails(object sender, RoutedEventArgs e) => SetDetailsVisible(!_detailsVisible);
+
+    private void SetDetailsVisible(bool visible)
+    {
+        if (_detailsAnimating || visible == _detailsVisible) return;
+        _detailsAnimating = true;
+        var transform = (TranslateTransform)DetailsPane.RenderTransform;
+        var duration = TimeSpan.FromMilliseconds(190);
+        if (visible)
+        {
+            DetailsColumn.Width = new GridLength(294);
+            DetailsPane.Visibility = Visibility.Visible;
+            DetailsPane.Opacity = 0;
+            transform.X = 26;
+            DetailsPane.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, duration));
+            var slide = new DoubleAnimation(26, 0, duration);
+            slide.Completed += (_, _) => { transform.X = 0; DetailsPane.Opacity = 1; _detailsVisible = true; _detailsAnimating = false; };
+            transform.BeginAnimation(TranslateTransform.XProperty, slide);
+        }
+        else
+        {
+            DetailsPane.BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0, duration));
+            var slide = new DoubleAnimation(0, 26, duration);
+            slide.Completed += (_, _) =>
+            {
+                DetailsPane.Visibility = Visibility.Collapsed;
+                DetailsColumn.Width = new GridLength(0);
+                transform.X = 0;
+                DetailsPane.Opacity = 1;
+                _detailsVisible = false;
+                _detailsAnimating = false;
+            };
+            transform.BeginAnimation(TranslateTransform.XProperty, slide);
+        }
+    }
     private void OnNavigateUp(object sender, RoutedEventArgs e) => _viewModel.NavigateUp();
     private async void OnArchiveItemDoubleClick(object sender, MouseButtonEventArgs e)
     {
