@@ -113,7 +113,11 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(request.Destination))!);
 
         using var output = new FileStream(request.Destination, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024, FileOptions.SequentialScan);
-        var writerOptions = new WriterOptions(ToCompressionType(request.Format)) { LeaveStreamOpen = false };
+        var writerOptions = new WriterOptions(ToCompressionType(request.Format))
+        {
+            LeaveStreamOpen = false,
+            BufferSize = 1024 * 1024,
+        };
         if (request.Format != ArchiveFormat.SevenZip) writerOptions.CompressionLevel = ToLevel(request.Level);
         using var writer = WriterFactory.OpenWriter(output, ToArchiveType(request.Format), writerOptions);
 
@@ -246,8 +250,8 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         CompressionPreset.Store => 0,
         CompressionPreset.Fastest => 1,
         CompressionPreset.Fast => 3,
-        CompressionPreset.Normal => 5,
-        CompressionPreset.High => 7,
+        CompressionPreset.Normal => 6,
+        CompressionPreset.High => 8,
         CompressionPreset.Ultra => 9,
         _ => 5,
     };

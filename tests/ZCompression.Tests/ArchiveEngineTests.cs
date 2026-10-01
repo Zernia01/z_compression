@@ -108,5 +108,25 @@ public sealed class ArchiveEngineTests
         finally { Directory.Delete(root, true); }
     }
 
+    [TestMethod]
+    public async Task HighCompression_IsNoLargerThanFastestForCompressibleData()
+    {
+        var root = CreateTemporaryDirectory();
+        try
+        {
+            var source = Path.Combine(root, "compressible.txt");
+            await File.WriteAllTextAsync(source, string.Concat(Enumerable.Repeat("z_compression 압축 효율 검증 데이터 0123456789\n", 50_000)), Encoding.UTF8);
+            var fastest = Path.Combine(root, "fastest.zip");
+            var high = Path.Combine(root, "high.zip");
+            var engine = new SharpCompressArchiveEngine();
+
+            await engine.CompressAsync(new CompressionRequest([source], fastest, ArchiveFormat.Zip, CompressionPreset.Fastest));
+            await engine.CompressAsync(new CompressionRequest([source], high, ArchiveFormat.Zip, CompressionPreset.High));
+
+            Assert.IsLessThanOrEqualTo(new FileInfo(fastest).Length, new FileInfo(high).Length, "High compression should not produce a larger ZIP than the fastest preset for compressible data.");
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
     private static string CreateTemporaryDirectory() { var path = Path.Combine(Path.GetTempPath(), "z_compression-tests", Guid.NewGuid().ToString("N")); Directory.CreateDirectory(path); return path; }
 }

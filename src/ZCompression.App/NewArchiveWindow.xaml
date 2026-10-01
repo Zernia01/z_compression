@@ -75,7 +75,7 @@
                 </StackPanel>
                 <StackPanel Grid.Row="1" Grid.Column="2">
                     <TextBlock Text="{local:Loc CompressionLevel}" FontWeight="SemiBold" FontSize="11"/>
-                    <ComboBox x:Name="LevelBox" Margin="0,7,0,0" SelectedIndex="3">
+                    <ComboBox x:Name="LevelBox" Margin="0,7,0,0" SelectedIndex="4">
                         <ComboBoxItem Tag="Store" Content="{local:Loc StoreOnly}"/><ComboBoxItem Tag="Fastest" Content="{local:Loc Fastest}"/>
                         <ComboBoxItem Tag="Fast" Content="{local:Loc Fast}"/><ComboBoxItem Tag="Normal" Content="{local:Loc Normal}"/>
                         <ComboBoxItem Tag="High" Content="{local:Loc High}"/><ComboBoxItem Tag="Ultra" Content="{local:Loc Ultra}"/>

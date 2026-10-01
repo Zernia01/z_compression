@@ -26,7 +26,7 @@ public partial class NewArchiveWindow : Window, INotifyPropertyChanged
     public IReadOnlyList<string> SelectedSources => Sources.Select(item => item.FullPath).ToArray();
     public string DestinationPath { get; private set; } = "";
     public ArchiveFormat SelectedFormat { get; private set; } = ArchiveFormat.Zip;
-    public CompressionPreset SelectedLevel { get; private set; } = CompressionPreset.Normal;
+    public CompressionPreset SelectedLevel { get; private set; } = CompressionPreset.High;
 
     private void OnAddFiles(object sender, RoutedEventArgs e)
     {
@@ -68,7 +68,7 @@ public partial class NewArchiveWindow : Window, INotifyPropertyChanged
         if (FileNameBox.Text.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0) { ValidationText.Text = LocalizationManager.Instance["ValidationInvalidName"]; return; }
 
         SelectedFormat = ParseEnumTag(FormatBox, ArchiveFormat.Zip);
-        SelectedLevel = ParseEnumTag(LevelBox, CompressionPreset.Normal);
+        SelectedLevel = ParseEnumTag(LevelBox, CompressionPreset.High);
         var extension = SelectedFormat switch { ArchiveFormat.SevenZip => ".7z", ArchiveFormat.Tar => ".tar", ArchiveFormat.TarGZip => ".tar.gz", _ => ".zip" };
         var fileName = StripArchiveExtension(FileNameBox.Text) + extension;
         DestinationPath = Path.GetFullPath(Path.Combine(LocationBox.Text.Trim(), fileName));
