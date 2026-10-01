@@ -1,6 +1,7 @@
 using System.Text;
 using ZCompression.Core.Localization;
 using ZCompression.Core.Settings;
+using ZCompression.Core.Collections;
 using ZCompression.Update;
 
 namespace ZCompression.Tests;
@@ -52,5 +53,20 @@ public sealed class ServicesTests
         var engine = new ZCompression.Core.Archives.SharpCompressArchiveEngine();
         Assert.IsTrue(engine.Capabilities[ZCompression.Core.Archives.ArchiveFormat.Rar].CanRead);
         Assert.IsFalse(engine.Capabilities[ZCompression.Core.Archives.ArchiveFormat.Rar].CanWrite);
+    }
+
+    [TestMethod]
+    public void BulkCollection_ReplaceAllRaisesOneReset()
+    {
+        var collection = new BulkObservableCollection<int>();
+        var notifications = 0;
+        collection.CollectionChanged += (_, eventArgs) =>
+        {
+            notifications++;
+            Assert.AreEqual(System.Collections.Specialized.NotifyCollectionChangedAction.Reset, eventArgs.Action);
+        };
+        collection.ReplaceAll(Enumerable.Range(0, 100_000));
+        Assert.HasCount(100_000, collection);
+        Assert.AreEqual(1, notifications);
     }
 }

@@ -86,5 +86,27 @@ public sealed class ArchiveEngineTests
         finally { Directory.Delete(root, true); }
     }
 
+    [TestMethod]
+    public async Task Listing_UnchangedArchiveUsesCachedMetadata()
+    {
+        var root = CreateTemporaryDirectory();
+        try
+        {
+            var archivePath = Path.Combine(root, "cached.zip");
+            await using (var stream = File.Create(archivePath))
+            using (var archive = new ZipArchive(stream, ZipArchiveMode.Create))
+            {
+                var entry = archive.CreateEntry("file.txt");
+                await using var writer = new StreamWriter(entry.Open());
+                await writer.WriteAsync("cached");
+            }
+            var engine = new SharpCompressArchiveEngine();
+            var first = await engine.ListAsync(archivePath);
+            var second = await engine.ListAsync(archivePath);
+            Assert.AreSame(first, second);
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
     private static string CreateTemporaryDirectory() { var path = Path.Combine(Path.GetTempPath(), "z_compression-tests", Guid.NewGuid().ToString("N")); Directory.CreateDirectory(path); return path; }
 }

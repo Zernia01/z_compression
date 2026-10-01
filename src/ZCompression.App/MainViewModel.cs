@@ -1,9 +1,8 @@
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Windows.Data;
 using ZCompression.Core.Archives;
+using ZCompression.Core.Collections;
 using ZCompression.Core.Localization;
 using ZCompression.Core.Settings;
 
@@ -35,15 +34,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public MainViewModel(IArchiveEngine engine, ILocalizationService localization, ISettingsService settingsService, AppSettings settings)
     {
         _engine = engine; _localization = localization; _settingsService = settingsService; Settings = settings;
-        FilteredEntries = CollectionViewSource.GetDefaultView(Entries);
-        FilteredEntries.Filter = item => item is ArchiveEntryInfo entry && (string.IsNullOrWhiteSpace(SearchText) || entry.Path.Contains(SearchText, StringComparison.CurrentCultureIgnoreCase));
         _localization.LanguageChanged += (_, _) => NotifyLocalized();
         Status = _localization["Ready"];
     }
 
-    public ObservableCollection<ArchiveEntryInfo> Entries { get; } = [];
-    public ObservableCollection<ArchiveBrowserItem> BrowserItems { get; } = [];
-    public ICollectionView FilteredEntries { get; }
+    public BulkObservableCollection<ArchiveEntryInfo> Entries { get; } = [];
+    public BulkObservableCollection<ArchiveBrowserItem> BrowserItems { get; } = [];
     public AppSettings Settings { get; private set; }
     public string Subtitle => _localization["Subtitle"];
     public string NewArchiveText => _localization["NewArchive"];
@@ -80,13 +76,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public int VisibleFileCount => BrowserItems.Count(item => !item.IsDirectory);
     public string BrowserStatus => string.Format(_localization["BrowserStatus"], VisibleFileCount, VisibleFolderCount, Entries.Count);
     public string BrowserItemCountText => string.Format(_localization["ItemCount"], BrowserItems.Count);
-    public string SearchText { get => _searchText; set { if (Set(ref _searchText, value)) { FilteredEntries.Refresh(); RebuildBrowserItems(); } } }
+    public string SearchText { get => _searchText; set { if (Set(ref _searchText, value)) RebuildBrowserItems(); } }
 
     public async Task OpenArchiveAsync(string path) => await WithOperation(async token =>
     {
         Status = _localization["Opening"];
         var entries = await _engine.ListAsync(path, cancellationToken: token);
-        Entries.Clear(); foreach (var entry in entries) Entries.Add(entry);
+        Entries.ReplaceAll(entries);
         CurrentArchivePath = Path.GetFullPath(path); CurrentArchive = Path.GetFileName(path); CurrentFolder = ""; SelectedEntry = null; SelectedBrowserItem = null; RebuildBrowserItems(); Status = string.Format(_localization["EntryCount"], entries.Count);
     });
 
@@ -95,7 +91,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         Status = _localization["Compressing"];
         await _engine.CompressAsync(new CompressionRequest(sources, destination, format, level), CreateProgress(), token);
         var entries = await _engine.ListAsync(destination, cancellationToken: token);
-        Entries.Clear(); foreach (var entry in entries) Entries.Add(entry);
+        Entries.ReplaceAll(entries);
         CurrentArchivePath = Path.GetFullPath(destination); CurrentArchive = Path.GetFileName(destination);
         CurrentFolder = ""; SelectedEntry = null; SelectedBrowserItem = null; RebuildBrowserItems();
         Status = _localization["CompressionComplete"];
@@ -118,7 +114,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public void Cancel() => _cancellation?.Cancel();
     public void ClearArchive()
     {
-        Entries.Clear(); BrowserItems.Clear(); SelectedEntry = null; SelectedBrowserItem = null; CurrentFolder = ""; CurrentArchivePath = string.Empty; CurrentArchive = string.Empty; SearchText = string.Empty; Status = _localization["Ready"];
+        Entries.ReplaceAll([]); BrowserItems.ReplaceAll([]); SelectedEntry = null; SelectedBrowserItem = null; CurrentFolder = ""; CurrentArchivePath = string.Empty; CurrentArchive = string.Empty; SearchText = string.Empty; Status = _localization["Ready"];
     }
 
     public void OpenBrowserItem(ArchiveBrowserItem? item)
@@ -204,8 +200,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     });
     private void RebuildBrowserItems()
     {
-        BrowserItems.Clear();
-        if (!string.IsNullOrEmpty(CurrentFolder)) BrowserItems.Add(new ArchiveBrowserItem("..", CurrentFolder, true, true, 0, 0, null, null, null));
+        var items = new List<ArchiveBrowserItem>();
+        if (!string.IsNullOrEmpty(CurrentFolder)) items.Add(new ArchiveBrowserItem("..", CurrentFolder, true, true, 0, 0, null, null, null));
 
         var prefix = string.IsNullOrEmpty(CurrentFolder) ? "" : CurrentFolder.Trim('/') + "/";
         var folders = new HashSet<string>(StringComparer.CurrentCultureIgnoreCase);
@@ -219,21 +215,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
             if (separator >= 0)
             {
                 var folder = relative[..separator];
-                if (MatchesSearch(folder) && folders.Add(folder)) BrowserItems.Add(new ArchiveBrowserItem(folder, prefix + folder, true, false, 0, 0, entry.Modified, null, null));
+                if (MatchesSearch(folder) && folders.Add(folder)) items.Add(new ArchiveBrowserItem(folder, prefix + folder, true, false, 0, 0, entry.Modified, null, null));
                 continue;
             }
             if (entry.IsDirectory)
             {
-                if (MatchesSearch(relative) && folders.Add(relative)) BrowserItems.Add(new ArchiveBrowserItem(relative, normalized, true, false, 0, 0, entry.Modified, entry.Checksum, entry));
+                if (MatchesSearch(relative) && folders.Add(relative)) items.Add(new ArchiveBrowserItem(relative, normalized, true, false, 0, 0, entry.Modified, entry.Checksum, entry));
             }
             else if (MatchesSearch(relative))
             {
-                BrowserItems.Add(new ArchiveBrowserItem(relative, normalized, false, false, entry.OriginalSize, entry.CompressedSize, entry.Modified, entry.Checksum, entry));
+                items.Add(new ArchiveBrowserItem(relative, normalized, false, false, entry.OriginalSize, entry.CompressedSize, entry.Modified, entry.Checksum, entry));
             }
         }
 
-        var ordered = BrowserItems.OrderByDescending(item => item.IsParent).ThenByDescending(item => item.IsDirectory).ThenBy(item => item.Name, StringComparer.CurrentCultureIgnoreCase).ToArray();
-        BrowserItems.Clear(); foreach (var item in ordered) BrowserItems.Add(item);
+        var ordered = items.OrderByDescending(item => item.IsParent).ThenByDescending(item => item.IsDirectory).ThenBy(item => item.Name, StringComparer.CurrentCultureIgnoreCase).ToArray();
+        BrowserItems.ReplaceAll(ordered);
         OnPropertyChanged(nameof(VisibleFolderCount)); OnPropertyChanged(nameof(VisibleFileCount)); OnPropertyChanged(nameof(BrowserStatus)); OnPropertyChanged(nameof(BrowserItemCountText));
     }
 

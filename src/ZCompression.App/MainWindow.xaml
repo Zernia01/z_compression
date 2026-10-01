@@ -158,6 +158,8 @@
                       Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,1"
                       GridLinesVisibility="All" HorizontalGridLinesBrush="{DynamicResource BorderBrush}" VerticalGridLinesBrush="{DynamicResource BorderBrush}"
                       RowBackground="{DynamicResource CardBackgroundBrush}" AlternatingRowBackground="{DynamicResource ControlBackgroundBrush}"
+                      EnableRowVirtualization="True" EnableColumnVirtualization="True" VirtualizingPanel.IsVirtualizing="True"
+                      VirtualizingPanel.VirtualizationMode="Recycling" ScrollViewer.IsDeferredScrollingEnabled="True"
                       CellStyle="{StaticResource GridCell}" ColumnHeaderStyle="{StaticResource GridHeader}">
                 <DataGrid.Columns>
                     <DataGridTemplateColumn Header="{local:Loc Name}" Width="2.6*">

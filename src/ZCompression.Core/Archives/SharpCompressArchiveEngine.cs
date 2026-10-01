@@ -9,6 +9,9 @@ namespace ZCompression.Core.Archives;
 
 public sealed class SharpCompressArchiveEngine : IArchiveEngine
 {
+    private const int ArchiveReadBufferSize = 1024 * 1024;
+    private readonly object _listingCacheLock = new();
+    private ListingCache? _listingCache;
     private static readonly IReadOnlyDictionary<ArchiveFormat, ArchiveCapabilities> Supported =
         new Dictionary<ArchiveFormat, ArchiveCapabilities>
         {
@@ -34,6 +37,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         }
 
         if (request.Sources.Count == 0) throw new ArgumentException("At least one source is required.", nameof(request));
+        InvalidateListingCache(request.Destination);
         return Task.Run(() => CompressCore(request, progress, cancellationToken), cancellationToken);
     }
 
@@ -47,7 +51,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             ArgumentException.ThrowIfNullOrWhiteSpace(entryPath);
             ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
             cancellationToken.ThrowIfCancellationRequested();
-            using var archive = ArchiveFactory.OpenArchive(archivePath, CreateReaderOptions(password, null));
+            using var archive = ArchiveFactory.OpenArchive(archivePath, CreateReaderOptions(password, null, archivePath));
             var normalized = entryPath.Replace('\\', '/').TrimStart('/');
             var entry = archive.Entries.FirstOrDefault(candidate =>
                 string.Equals((candidate.Key ?? string.Empty).Replace('\\', '/').TrimStart('/'), normalized, StringComparison.Ordinal));
@@ -62,18 +66,34 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
     public Task<IReadOnlyList<ArchiveEntryInfo>> ListAsync(string archivePath, string? password = null, System.Text.Encoding? legacyEncoding = null, CancellationToken cancellationToken = default) =>
         Task.Run<IReadOnlyList<ArchiveEntryInfo>>(() =>
         {
-            using var archive = ArchiveFactory.OpenArchive(archivePath, CreateReaderOptions(password, legacyEncoding));
-            return archive.Entries.Select(entry =>
+            var file = new FileInfo(Path.GetFullPath(archivePath));
+            if (password is null && legacyEncoding is null)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                return new ArchiveEntryInfo(entry.Key ?? string.Empty, entry.Key ?? string.Empty, entry.Size, entry.CompressedSize, entry.LastModifiedTime, entry.Crc.ToString("X8"), entry.IsDirectory);
-            }).ToArray();
+                lock (_listingCacheLock)
+                {
+                    if (_listingCache is { } cached && cached.Path.Equals(file.FullName, StringComparison.OrdinalIgnoreCase) && cached.Length == file.Length && cached.LastWriteTimeUtc == file.LastWriteTimeUtc)
+                        return cached.Entries;
+                }
+            }
+
+            using var archive = ArchiveFactory.OpenArchive(file, CreateReaderOptions(password, legacyEncoding, file.FullName));
+            var entries = archive.Entries.Select(entry =>
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    return new ArchiveEntryInfo(entry.Key ?? string.Empty, entry.Key ?? string.Empty, entry.Size, entry.CompressedSize, entry.LastModifiedTime, entry.Crc.ToString("X8"), entry.IsDirectory);
+                })
+                .ToArray();
+            if (password is null && legacyEncoding is null)
+            {
+                lock (_listingCacheLock) _listingCache = new ListingCache(file.FullName, file.Length, file.LastWriteTimeUtc, entries);
+            }
+            return entries;
         }, cancellationToken);
 
     public Task TestAsync(string archivePath, string? password = null, CancellationToken cancellationToken = default) =>
         Task.Run(() =>
         {
-            using var archive = ArchiveFactory.OpenArchive(archivePath, CreateReaderOptions(password, null));
+            using var archive = ArchiveFactory.OpenArchive(archivePath, CreateReaderOptions(password, null, archivePath));
             foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -119,7 +139,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
     private static void ExtractCore(ExtractionRequest request, IProgress<ArchiveProgress>? progress, CancellationToken token)
     {
         Directory.CreateDirectory(request.DestinationDirectory);
-        using var archive = ArchiveFactory.OpenArchive(request.ArchivePath, CreateReaderOptions(request.Password, request.LegacyEncoding));
+        using var archive = ArchiveFactory.OpenArchive(request.ArchivePath, CreateReaderOptions(request.Password, request.LegacyEncoding, request.ArchivePath));
         var entries = archive.Entries.ToArray();
         if (entries.Length > request.MaximumFileCount) throw new InvalidDataException("Archive contains too many entries.");
         var total = entries.Where(e => !e.IsDirectory).Sum(e => e.Size);
@@ -153,11 +173,31 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         }
     }
 
-    private static ReaderOptions CreateReaderOptions(string? password, System.Text.Encoding? encoding) => new()
+    private static ReaderOptions CreateReaderOptions(string? password, System.Text.Encoding? encoding, string archivePath) => new()
     {
         Password = password,
         ArchiveEncoding = new ArchiveEncoding { Default = encoding ?? System.Text.Encoding.UTF8 },
+        BufferSize = ArchiveReadBufferSize,
+        ExtensionHint = GetExtensionHint(archivePath),
     };
+
+    private static string GetExtensionHint(string archivePath)
+    {
+        var name = Path.GetFileName(archivePath);
+        if (name.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase)) return "tar.gz";
+        return Path.GetExtension(name).TrimStart('.').ToLowerInvariant();
+    }
+
+    private void InvalidateListingCache(string archivePath)
+    {
+        var fullPath = Path.GetFullPath(archivePath);
+        lock (_listingCacheLock)
+        {
+            if (_listingCache?.Path.Equals(fullPath, StringComparison.OrdinalIgnoreCase) == true) _listingCache = null;
+        }
+    }
+
+    private sealed record ListingCache(string Path, long Length, DateTime LastWriteTimeUtc, IReadOnlyList<ArchiveEntryInfo> Entries);
 
     private static IEnumerable<(string FullPath, string EntryName, bool IsDirectory)> ExpandSources(IEnumerable<string> sources)
     {
