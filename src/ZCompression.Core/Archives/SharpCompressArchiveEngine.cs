@@ -15,10 +15,10 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
     private static readonly IReadOnlyDictionary<ArchiveFormat, ArchiveCapabilities> Supported =
         new Dictionary<ArchiveFormat, ArchiveCapabilities>
         {
-            [ArchiveFormat.Zip] = new(true, true, false, false, "Encrypted ZIP reading is supported; creation is not exposed by this engine version."),
-            [ArchiveFormat.SevenZip] = new(true, true, false, false, "7Z AES creation is not exposed by the selected engine."),
-            [ArchiveFormat.Tar] = new(true, true, false, false),
-            [ArchiveFormat.TarGZip] = new(true, true, false, false),
+            [ArchiveFormat.Zip] = new(true, true, false, true, "Encrypted ZIP reading is supported; creation is not exposed by this engine version."),
+            [ArchiveFormat.SevenZip] = new(true, true, false, true, "7Z AES creation is not exposed by the selected engine."),
+            [ArchiveFormat.Tar] = new(true, true, false, true),
+            [ArchiveFormat.TarGZip] = new(true, true, false, true),
             [ArchiveFormat.GZip] = new(true, true, false, false, "Single-file stream format."),
             [ArchiveFormat.BZip2] = new(true, false, false, false, "Standalone BZ2 creation is not exposed by the archive writer."),
             [ArchiveFormat.Xz] = new(true, false, false, false, "Read-only in SharpCompress."),
@@ -43,6 +43,15 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
 
     public Task ExtractAsync(ExtractionRequest request, IProgress<ArchiveProgress>? progress = null, CancellationToken cancellationToken = default) =>
         Task.Run(() => ExtractCore(request, progress, cancellationToken), cancellationToken);
+
+    public Task UpdateAsync(ArchiveUpdateRequest request, IProgress<ArchiveProgress>? progress = null, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (!Supported.TryGetValue(request.Format, out var capabilities) || !capabilities.CanModify)
+            throw new NotSupportedException($"Updating {request.Format} archives is not supported.");
+        if (request.Sources.Count == 0) throw new ArgumentException("At least one source is required.", nameof(request));
+        return Task.Run(() => UpdateCore(request, progress, cancellationToken), cancellationToken);
+    }
 
     public Task ExtractEntryAsync(string archivePath, string entryPath, string destinationPath, string? password = null, CancellationToken cancellationToken = default) =>
         Task.Run(() =>
@@ -175,6 +184,77 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             completed++;
             Report(progress, key, completed, entries.Length, processed, total, watch.Elapsed);
         }
+    }
+
+    private void UpdateCore(ArchiveUpdateRequest request, IProgress<ArchiveProgress>? progress, CancellationToken token)
+    {
+        var archivePath = Path.GetFullPath(request.ArchivePath);
+        if (!File.Exists(archivePath)) throw new FileNotFoundException("Archive was not found.", archivePath);
+
+        var workDirectory = Path.Combine(Path.GetTempPath(), "z_compression", "update", Guid.NewGuid().ToString("N"));
+        var temporaryArchive = Path.Combine(Path.GetDirectoryName(archivePath)!, $".{Path.GetFileName(archivePath)}.{Guid.NewGuid():N}.tmp");
+        Directory.CreateDirectory(workDirectory);
+        try
+        {
+            ExtractCore(new ExtractionRequest(archivePath, workDirectory), progress, token);
+            var destination = string.IsNullOrWhiteSpace(request.DestinationFolder)
+                ? workDirectory
+                : SafeExtractionPath.Resolve(workDirectory, request.DestinationFolder.Replace('\\', '/').Trim('/'));
+            Directory.CreateDirectory(destination);
+            foreach (var source in request.Sources) CopySourceIntoDirectory(source, destination, token);
+
+            var sources = Directory.EnumerateFileSystemEntries(workDirectory).ToArray();
+            CompressCore(new CompressionRequest(sources, temporaryArchive, request.Format, request.Level), progress, token);
+            token.ThrowIfCancellationRequested();
+            File.Move(temporaryArchive, archivePath, true);
+            InvalidateListingCache(archivePath);
+        }
+        finally
+        {
+            try { if (File.Exists(temporaryArchive)) File.Delete(temporaryArchive); } catch (IOException) { }
+            try { if (Directory.Exists(workDirectory)) Directory.Delete(workDirectory, true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    private static void CopySourceIntoDirectory(string source, string destinationDirectory, CancellationToken token)
+    {
+        var fullSource = Path.GetFullPath(source);
+        token.ThrowIfCancellationRequested();
+        if (File.Exists(fullSource))
+        {
+            RejectReparsePoint(fullSource);
+            var destination = Path.Combine(destinationDirectory, Path.GetFileName(fullSource));
+            if (Directory.Exists(destination)) throw new IOException($"A directory named '{Path.GetFileName(fullSource)}' already exists in the archive.");
+            File.Copy(fullSource, destination, true);
+            return;
+        }
+        if (!Directory.Exists(fullSource)) throw new FileNotFoundException("Source path was not found.", source);
+
+        RejectReparsePoint(fullSource);
+        var rootDestination = Path.Combine(destinationDirectory, Path.GetFileName(fullSource.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)));
+        if (File.Exists(rootDestination)) throw new IOException($"A file named '{Path.GetFileName(fullSource)}' already exists in the archive.");
+        CopyDirectory(fullSource, rootDestination, token);
+    }
+
+    private static void CopyDirectory(string source, string destination, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        RejectReparsePoint(source);
+        Directory.CreateDirectory(destination);
+        foreach (var file in Directory.EnumerateFiles(source))
+        {
+            token.ThrowIfCancellationRequested();
+            RejectReparsePoint(file);
+            File.Copy(file, Path.Combine(destination, Path.GetFileName(file)), true);
+        }
+        foreach (var directory in Directory.EnumerateDirectories(source))
+            CopyDirectory(directory, Path.Combine(destination, Path.GetFileName(directory)), token);
+    }
+
+    private static void RejectReparsePoint(string path)
+    {
+        if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
+            throw new InvalidDataException("Symbolic links and junctions cannot be added to an archive.");
     }
 
     private static ReaderOptions CreateReaderOptions(string? password, System.Text.Encoding? encoding, string archivePath) => new()

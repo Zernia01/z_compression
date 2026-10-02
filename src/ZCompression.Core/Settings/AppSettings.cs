@@ -10,6 +10,8 @@ public sealed record AppSettings
     public bool FirstRunCompleted { get; init; }
     public int CpuThreads { get; init; }
     public string OperationPriority { get; init; } = "normal";
+    public string CompressShortcut { get; init; } = "Ctrl+N";
+    public string ExtractShortcut { get; init; } = "Ctrl+E";
 }
 
 public interface ISettingsService

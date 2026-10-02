@@ -23,7 +23,9 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog(this) == true) await RunUiAction(() => _viewModel.OpenArchiveAsync(dialog.FileName));
     }
 
-    private async void OnExtract(object sender, RoutedEventArgs e)
+    private async void OnExtract(object sender, RoutedEventArgs e) => await ExtractArchiveAsync();
+
+    private async Task ExtractArchiveAsync()
     {
         var archivePath = _viewModel.CurrentArchivePath;
         if (string.IsNullOrWhiteSpace(archivePath))
@@ -62,10 +64,45 @@ public partial class MainWindow : Window
     {
         if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
         var paths = (string[])e.Data.GetData(DataFormats.FileDrop);
-        if (paths.Length == 1 && MainViewModel.IsArchivePath(paths[0])) await RunUiAction(() => _viewModel.OpenArchiveAsync(paths[0]));
+        if (_viewModel.HasArchive) await AddToOpenArchiveAsync(paths);
+        else if (paths.Length == 1 && MainViewModel.IsArchivePath(paths[0])) await RunUiAction(() => _viewModel.OpenArchiveAsync(paths[0]));
         else
         {
             await CreateArchiveFromSourcesAsync(paths);
+        }
+    }
+
+    private async void OnAddFiles(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = LocalizationManager.Instance["AddCompressionFilesTitle"],
+            Multiselect = true,
+            CheckFileExists = true,
+        };
+        if (dialog.ShowDialog(this) == true) await AddToOpenArchiveAsync(dialog.FileNames);
+    }
+
+    private async Task AddToOpenArchiveAsync(IReadOnlyList<string> paths)
+    {
+        if (!_viewModel.HasArchive || paths.Count == 0) return;
+        await RunWithProgressAsync(LocalizationManager.Instance["AddFiles"], Path.GetFileName(_viewModel.CurrentArchivePath), false,
+            () => _viewModel.AddToCurrentArchiveAsync(paths));
+    }
+
+    private async void OnShortcutKeyDown(object sender, KeyEventArgs e)
+    {
+        if (_viewModel.IsBusy || Keyboard.Modifiers.HasFlag(ModifierKeys.Windows)) return;
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        if (ShortcutGesture.Matches(_viewModel.Settings.CompressShortcut, key, Keyboard.Modifiers))
+        {
+            e.Handled = true;
+            await CreateArchiveFromSourcesAsync();
+        }
+        else if (ShortcutGesture.Matches(_viewModel.Settings.ExtractShortcut, key, Keyboard.Modifiers))
+        {
+            e.Handled = true;
+            await ExtractArchiveAsync();
         }
     }
 

@@ -44,6 +44,13 @@ public sealed record CompressionRequest(
     CompressionPreset Level = CompressionPreset.Normal,
     string? Password = null);
 
+public sealed record ArchiveUpdateRequest(
+    string ArchivePath,
+    IReadOnlyList<string> Sources,
+    ArchiveFormat Format,
+    string DestinationFolder = "",
+    CompressionPreset Level = CompressionPreset.High);
+
 public sealed record ExtractionRequest(
     string ArchivePath,
     string DestinationDirectory,

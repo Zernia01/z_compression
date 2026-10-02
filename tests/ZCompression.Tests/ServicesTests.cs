@@ -16,8 +16,8 @@ public sealed class ServicesTests
         try
         {
             var path = Path.Combine(root, "settings.json"); var service = new JsonSettingsService(path);
-            await service.SaveAsync(new AppSettings { Language = "ja-JP", Theme = "dark", CpuThreads = 4, OperationPriority = "high", CheckForUpdatesAtStartup = false });
-            var loaded = await service.LoadAsync(); Assert.AreEqual("ja-JP", loaded.Language); Assert.AreEqual("dark", loaded.Theme); Assert.AreEqual(4, loaded.CpuThreads); Assert.AreEqual("high", loaded.OperationPriority); Assert.IsFalse(loaded.CheckForUpdatesAtStartup);
+            await service.SaveAsync(new AppSettings { Language = "ja-JP", Theme = "dark", CpuThreads = 4, OperationPriority = "high", CheckForUpdatesAtStartup = false, CompressShortcut = "Ctrl+Shift+C", ExtractShortcut = "F8" });
+            var loaded = await service.LoadAsync(); Assert.AreEqual("ja-JP", loaded.Language); Assert.AreEqual("dark", loaded.Theme); Assert.AreEqual(4, loaded.CpuThreads); Assert.AreEqual("high", loaded.OperationPriority); Assert.IsFalse(loaded.CheckForUpdatesAtStartup); Assert.AreEqual("Ctrl+Shift+C", loaded.CompressShortcut); Assert.AreEqual("F8", loaded.ExtractShortcut);
             await File.WriteAllTextAsync(path, "{broken", Encoding.UTF8); Assert.AreEqual("auto", (await service.LoadAsync()).Language);
         }
         finally { Directory.Delete(root, true); }
@@ -53,6 +53,8 @@ public sealed class ServicesTests
         var engine = new ZCompression.Core.Archives.SharpCompressArchiveEngine();
         Assert.IsTrue(engine.Capabilities[ZCompression.Core.Archives.ArchiveFormat.Rar].CanRead);
         Assert.IsFalse(engine.Capabilities[ZCompression.Core.Archives.ArchiveFormat.Rar].CanWrite);
+        Assert.IsFalse(engine.Capabilities[ZCompression.Core.Archives.ArchiveFormat.Rar].CanModify);
+        Assert.IsTrue(engine.Capabilities[ZCompression.Core.Archives.ArchiveFormat.Zip].CanModify);
     }
 
     [TestMethod]

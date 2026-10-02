@@ -11,6 +11,7 @@ public partial class SettingsWindow : Window
 {
     private readonly MainViewModel _viewModel;
     private bool _isClosing;
+    private Button? _shortcutCaptureButton;
 
     public SettingsWindow(MainViewModel viewModel)
     {
@@ -21,16 +22,18 @@ public partial class SettingsWindow : Window
         SelectTag(CpuThreadsBox, viewModel.Settings.CpuThreads.ToString(System.Globalization.CultureInfo.InvariantCulture));
         SelectTag(PriorityBox, viewModel.Settings.OperationPriority);
         AutomaticUpdatesBox.IsChecked = viewModel.Settings.CheckForUpdatesAtStartup;
+        RefreshShortcutButtons();
     }
 
     private void OnCategoryChanged(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { CommandParameter: string category }) return;
         GeneralPanel.Visibility = category == "general" ? Visibility.Visible : Visibility.Collapsed;
+        ShortcutsPanel.Visibility = category == "shortcuts" ? Visibility.Visible : Visibility.Collapsed;
         AppearancePanel.Visibility = category == "appearance" ? Visibility.Visible : Visibility.Collapsed;
         PerformancePanel.Visibility = category == "performance" ? Visibility.Visible : Visibility.Collapsed;
         AboutPanel.Visibility = category == "about" ? Visibility.Visible : Visibility.Collapsed;
-        foreach (var button in new[] { GeneralNav, AppearanceNav, PerformanceNav, AboutNav }) button.Tag = null;
+        foreach (var button in new[] { GeneralNav, ShortcutsNav, AppearanceNav, PerformanceNav, AboutNav }) button.Tag = null;
         ((Button)sender).Tag = "Selected";
     }
 
@@ -65,6 +68,63 @@ public partial class SettingsWindow : Window
         if (AutomaticUpdatesBox is not null)
             _viewModel.SetCheckForUpdatesAtStartup(AutomaticUpdatesBox.IsChecked == true);
     }
+
+    private void OnShortcutCaptureClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button) return;
+        _shortcutCaptureButton = button;
+        ShortcutValidationText.Text = string.Empty;
+        button.Content = LocalizationManager.Instance["PressShortcut"];
+        Keyboard.Focus(button);
+    }
+
+    private void OnShortcutKeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is not Button button || button != _shortcutCaptureButton) return;
+        e.Handled = true;
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        if (ShortcutGesture.IsModifierKey(key)) return;
+        if (key == Key.Escape) { FinishShortcutCapture(); return; }
+
+        var shortcut = string.Empty;
+        if (key is not (Key.Delete or Key.Back) && !ShortcutGesture.TryCreate(key, Keyboard.Modifiers, out shortcut))
+        {
+            ShortcutValidationText.Text = LocalizationManager.Instance["ShortcutInvalid"];
+            return;
+        }
+
+        var otherShortcut = Equals(button.Tag, "compress") ? _viewModel.Settings.ExtractShortcut : _viewModel.Settings.CompressShortcut;
+        if (!string.IsNullOrEmpty(shortcut) && shortcut.Equals(otherShortcut, StringComparison.OrdinalIgnoreCase))
+        {
+            ShortcutValidationText.Text = LocalizationManager.Instance["ShortcutConflict"];
+            return;
+        }
+
+        var compress = Equals(button.Tag, "compress") ? shortcut : _viewModel.Settings.CompressShortcut;
+        var extract = Equals(button.Tag, "extract") ? shortcut : _viewModel.Settings.ExtractShortcut;
+        _viewModel.SetShortcuts(compress, extract);
+        ShortcutValidationText.Text = string.Empty;
+        FinishShortcutCapture();
+    }
+
+    private void OnShortcutCaptureLostFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (sender == _shortcutCaptureButton) FinishShortcutCapture();
+    }
+
+    private void FinishShortcutCapture()
+    {
+        _shortcutCaptureButton = null;
+        RefreshShortcutButtons();
+    }
+
+    private void RefreshShortcutButtons()
+    {
+        CompressShortcutButton.Content = DisplayShortcut(_viewModel.Settings.CompressShortcut);
+        ExtractShortcutButton.Content = DisplayShortcut(_viewModel.Settings.ExtractShortcut);
+    }
+
+    private static string DisplayShortcut(string shortcut) => string.IsNullOrWhiteSpace(shortcut) ? LocalizationManager.Instance["ShortcutNone"] : shortcut;
 
     private async void OnCheckForUpdates(object sender, RoutedEventArgs e)
     {

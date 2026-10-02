@@ -63,6 +63,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public string RemainingText { get => _remainingText; private set => Set(ref _remainingText, value); }
     public bool IsBusy { get => _isBusy; private set => Set(ref _isBusy, value); }
     public bool HasArchive => !string.IsNullOrWhiteSpace(CurrentArchive);
+    public bool CanModifyCurrentArchive => HasArchive && _engine.Capabilities.TryGetValue(FormatFromPath(CurrentArchivePath), out var capabilities) && capabilities.CanModify;
     public ArchiveEntryInfo? SelectedEntry { get => _selectedEntry; set => Set(ref _selectedEntry, value); }
     public ArchiveBrowserItem? SelectedBrowserItem
     {
@@ -102,6 +103,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
         Status = _localization["Extracting"];
         await _engine.ExtractAsync(new ExtractionRequest(archive, destination), CreateProgress(), token);
         Status = _localization["ExtractionComplete"];
+    });
+
+    public async Task AddToCurrentArchiveAsync(IReadOnlyList<string> sources) => await WithOperation(async token =>
+    {
+        if (string.IsNullOrWhiteSpace(CurrentArchivePath)) throw new InvalidOperationException("No archive is open.");
+        Status = _localization["Compressing"];
+        var format = FormatFromPath(CurrentArchivePath);
+        await _engine.UpdateAsync(new ArchiveUpdateRequest(CurrentArchivePath, sources, format, CurrentFolder, CompressionPreset.High), CreateProgress(), token);
+        var entries = await _engine.ListAsync(CurrentArchivePath, cancellationToken: token);
+        Entries.ReplaceAll(entries);
+        SelectedEntry = null; SelectedBrowserItem = null; RebuildBrowserItems();
+        Status = _localization["CompressionComplete"];
     });
 
     public async Task TestAsync(string archive) => await WithOperation(async token =>
@@ -172,6 +185,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public void SetCpuThreads(int threads) => Settings = Settings with { CpuThreads = Math.Max(0, threads) };
     public void SetOperationPriority(string priority) => Settings = Settings with { OperationPriority = priority };
     public void SetCheckForUpdatesAtStartup(bool enabled) => Settings = Settings with { CheckForUpdatesAtStartup = enabled };
+    public void SetShortcuts(string compressShortcut, string extractShortcut) => Settings = Settings with
+    {
+        CompressShortcut = compressShortcut,
+        ExtractShortcut = extractShortcut,
+    };
     public Task SaveSettingsAsync() => _settingsService.SaveAsync(Settings);
 
     public string FriendlyError(Exception exception) => exception switch
@@ -249,7 +267,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         if (EqualityComparer<T>.Default.Equals(field, value)) return false;
         field = value; OnPropertyChanged(name);
-        if (name == nameof(CurrentArchive)) { OnPropertyChanged(nameof(HasArchive)); OnPropertyChanged(nameof(BreadcrumbText)); }
+        if (name == nameof(CurrentArchive)) { OnPropertyChanged(nameof(HasArchive)); OnPropertyChanged(nameof(CanModifyCurrentArchive)); OnPropertyChanged(nameof(BreadcrumbText)); }
         return true;
     }
     private void OnPropertyChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

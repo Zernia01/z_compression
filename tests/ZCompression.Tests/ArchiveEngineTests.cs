@@ -128,5 +128,54 @@ public sealed class ArchiveEngineTests
         finally { Directory.Delete(root, true); }
     }
 
+    [TestMethod]
+    [DataRow(ArchiveFormat.Zip, ".zip")]
+    [DataRow(ArchiveFormat.SevenZip, ".7z")]
+    public async Task UpdateArchive_AddsFilesToSelectedFolderAndPreservesExistingEntries(ArchiveFormat format, string extension)
+    {
+        var root = CreateTemporaryDirectory();
+        try
+        {
+            var sourceDirectory = Directory.CreateDirectory(Path.Combine(root, "source")).FullName;
+            await File.WriteAllTextAsync(Path.Combine(sourceDirectory, "original.txt"), "original", Encoding.UTF8);
+            var addedFile = Path.Combine(root, "added.txt");
+            await File.WriteAllTextAsync(addedFile, "added", Encoding.UTF8);
+            var archivePath = Path.Combine(root, "updated" + extension);
+            var output = Path.Combine(root, "output");
+            var engine = new SharpCompressArchiveEngine();
+
+            await engine.CompressAsync(new CompressionRequest([sourceDirectory], archivePath, format));
+            await engine.UpdateAsync(new ArchiveUpdateRequest(archivePath, [addedFile], format, "source/nested"));
+            await engine.TestAsync(archivePath);
+            await engine.ExtractAsync(new ExtractionRequest(archivePath, output));
+
+            Assert.AreEqual("original", await File.ReadAllTextAsync(Path.Combine(output, "source", "original.txt"), Encoding.UTF8));
+            Assert.AreEqual("added", await File.ReadAllTextAsync(Path.Combine(output, "source", "nested", "added.txt"), Encoding.UTF8));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [TestMethod]
+    public async Task UpdateArchive_FailureLeavesOriginalArchiveUntouched()
+    {
+        var root = CreateTemporaryDirectory();
+        try
+        {
+            var source = Path.Combine(root, "original.txt");
+            await File.WriteAllTextAsync(source, "original", Encoding.UTF8);
+            var archivePath = Path.Combine(root, "original.zip");
+            var engine = new SharpCompressArchiveEngine();
+            await engine.CompressAsync(new CompressionRequest([source], archivePath, ArchiveFormat.Zip));
+            var before = await File.ReadAllBytesAsync(archivePath);
+
+            await Assert.ThrowsExactlyAsync<FileNotFoundException>(() => engine.UpdateAsync(
+                new ArchiveUpdateRequest(archivePath, [Path.Combine(root, "missing.txt")], ArchiveFormat.Zip)));
+
+            CollectionAssert.AreEqual(before, await File.ReadAllBytesAsync(archivePath));
+            await engine.TestAsync(archivePath);
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
     private static string CreateTemporaryDirectory() { var path = Path.Combine(Path.GetTempPath(), "z_compression-tests", Guid.NewGuid().ToString("N")); Directory.CreateDirectory(path); return path; }
 }

@@ -41,6 +41,9 @@
                         <Button x:Name="GeneralNav" Style="{StaticResource SettingsNav}" CommandParameter="general" Click="OnCategoryChanged">
                             <StackPanel Orientation="Horizontal"><TextBlock Text="⚙️" FontFamily="Segoe UI Emoji" Width="28" FontSize="15"/><TextBlock Text="{local:Loc General}"/></StackPanel>
                         </Button>
+                        <Button x:Name="ShortcutsNav" Style="{StaticResource SettingsNav}" CommandParameter="shortcuts" Click="OnCategoryChanged">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="⌨️" FontFamily="Segoe UI Emoji" Width="28" FontSize="15"/><TextBlock Text="{local:Loc Shortcuts}"/></StackPanel>
+                        </Button>
                         <Button x:Name="AppearanceNav" Style="{StaticResource SettingsNav}" Tag="Selected" CommandParameter="appearance" Click="OnCategoryChanged">
                             <StackPanel Orientation="Horizontal"><TextBlock Text="🎨" FontFamily="Segoe UI Emoji" Width="28" FontSize="15"/><TextBlock Text="{local:Loc Appearance}"/></StackPanel>
                         </Button>
@@ -81,6 +84,24 @@
                         </Grid>
                         <Button Style="{StaticResource OutlineButton}" Content="{local:Loc CheckForUpdatesNow}" HorizontalAlignment="Left" Margin="0,14,0,0" Click="OnCheckForUpdates" />
                         <CheckBox Content="{local:Loc NotifyWhenComplete}" Margin="0,20,0,0" IsChecked="True" />
+                    </StackPanel>
+
+                    <StackPanel x:Name="ShortcutsPanel" Visibility="Collapsed">
+                        <TextBlock Text="{local:Loc Shortcuts}" FontSize="23" FontWeight="SemiBold" />
+                        <TextBlock Text="{local:Loc ShortcutsDescription}" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,7,0,26" />
+                        <Separator Background="{DynamicResource BorderBrush}" />
+                        <Grid Margin="0,22,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="220"/></Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="{local:Loc CompressShortcut}" FontWeight="SemiBold"/><TextBlock Text="{local:Loc CompressAction}" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,12,0"/></StackPanel>
+                            <Button x:Name="CompressShortcutButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Click="OnShortcutCaptureClick" PreviewKeyDown="OnShortcutKeyDown" LostKeyboardFocus="OnShortcutCaptureLostFocus" Tag="compress" />
+                        </Grid>
+                        <Grid Margin="0,16,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="220"/></Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="{local:Loc ExtractShortcut}" FontWeight="SemiBold"/><TextBlock Text="{local:Loc ExtractAction}" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,12,0"/></StackPanel>
+                            <Button x:Name="ExtractShortcutButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Click="OnShortcutCaptureClick" PreviewKeyDown="OnShortcutKeyDown" LostKeyboardFocus="OnShortcutCaptureLostFocus" Tag="extract" />
+                        </Grid>
+                        <TextBlock Text="{local:Loc ShortcutCaptureHint}" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap" Margin="0,24,0,0" />
+                        <TextBlock x:Name="ShortcutValidationText" Foreground="#E35D6A" TextWrapping="Wrap" Margin="0,12,0,0" />
                     </StackPanel>
 
                     <StackPanel x:Name="AppearancePanel">
@@ -124,7 +145,7 @@
                         <Separator Background="{DynamicResource BorderBrush}" />
                         <Image Source="/Assets/icon.png" Width="58" Height="58" HorizontalAlignment="Left" Margin="0,24,0,12"/>
                         <TextBlock Text="z_compression" FontSize="20" FontWeight="SemiBold" />
-                        <TextBlock Text="Version 1.0.6 · MIT License" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0" />
+                        <TextBlock Text="Version 1.0.7 · MIT License" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0" />
                         <TextBlock Text="{local:Loc PrivacyStatement}" Margin="0,24,0,0" />
                         <Button Style="{StaticResource AccentButton}" Content="☕  Buy Me a Coffee" HorizontalAlignment="Left" Margin="0,22,0,0" Click="OnDonate" />
                     </StackPanel>
