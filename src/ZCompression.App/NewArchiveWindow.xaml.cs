@@ -27,6 +27,7 @@ public partial class NewArchiveWindow : Window, INotifyPropertyChanged
     public string DestinationPath { get; private set; } = "";
     public ArchiveFormat SelectedFormat { get; private set; } = ArchiveFormat.Zip;
     public CompressionPreset SelectedLevel { get; private set; } = CompressionPreset.High;
+    public string? SelectedPassword => SelectedFormat == ArchiveFormat.Rar && PasswordBox.Password.Length > 0 ? PasswordBox.Password : null;
 
     private void OnAddFiles(object sender, RoutedEventArgs e)
     {
@@ -55,8 +56,9 @@ public partial class NewArchiveWindow : Window, INotifyPropertyChanged
     private void OnFormatChanged(object sender, SelectionChangedEventArgs e)
     {
         if (FileNameBox is null || FormatBox.SelectedItem is not ComboBoxItem { Tag: string format }) return;
-        var extension = format switch { "SevenZip" => ".7z", "Tar" => ".tar", "TarGZip" => ".tar.gz", _ => ".zip" };
+        var extension = format switch { "Rar" => ".rar", "SevenZip" => ".7z", "Tar" => ".tar", "TarGZip" => ".tar.gz", _ => ".zip" };
         FileNameBox.Text = StripArchiveExtension(FileNameBox.Text) + extension;
+        if (RarOptionsPanel is not null) RarOptionsPanel.Visibility = format == "Rar" ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void OnStartCompression(object sender, RoutedEventArgs e)
@@ -68,8 +70,13 @@ public partial class NewArchiveWindow : Window, INotifyPropertyChanged
         if (FileNameBox.Text.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0) { ValidationText.Text = LocalizationManager.Instance["ValidationInvalidName"]; return; }
 
         SelectedFormat = ParseEnumTag(FormatBox, ArchiveFormat.Zip);
+        if (SelectedFormat == ArchiveFormat.Rar && RarCommandLine.FindExecutable() is null)
+        {
+            ValidationText.Text = LocalizationManager.Instance["RarToolRequired"];
+            return;
+        }
         SelectedLevel = ParseEnumTag(LevelBox, CompressionPreset.High);
-        var extension = SelectedFormat switch { ArchiveFormat.SevenZip => ".7z", ArchiveFormat.Tar => ".tar", ArchiveFormat.TarGZip => ".tar.gz", _ => ".zip" };
+        var extension = SelectedFormat switch { ArchiveFormat.Rar => ".rar", ArchiveFormat.SevenZip => ".7z", ArchiveFormat.Tar => ".tar", ArchiveFormat.TarGZip => ".tar.gz", _ => ".zip" };
         var fileName = StripArchiveExtension(FileNameBox.Text) + extension;
         DestinationPath = Path.GetFullPath(Path.Combine(LocationBox.Text.Trim(), fileName));
         DialogResult = true;
@@ -88,10 +95,10 @@ public partial class NewArchiveWindow : Window, INotifyPropertyChanged
         if (Sources.Count == 1 && FileNameBox.Text == LocalizationManager.Instance["DefaultArchiveName"]) FileNameBox.Text = StripArchiveExtension(Sources[0].Name) + CurrentExtension();
     }
 
-    private string CurrentExtension() => FormatBox.SelectedItem is ComboBoxItem { Tag: string tag } ? tag switch { "SevenZip" => ".7z", "Tar" => ".tar", "TarGZip" => ".tar.gz", _ => ".zip" } : ".zip";
+    private string CurrentExtension() => FormatBox.SelectedItem is ComboBoxItem { Tag: string tag } ? tag switch { "Rar" => ".rar", "SevenZip" => ".7z", "Tar" => ".tar", "TarGZip" => ".tar.gz", _ => ".zip" } : ".zip";
     private static string StripArchiveExtension(string name)
     {
-        foreach (var extension in new[] { ".tar.gz", ".zip", ".7z", ".tar", ".tgz" })
+        foreach (var extension in new[] { ".tar.gz", ".zip", ".rar", ".7z", ".tar", ".tgz" })
             if (name.EndsWith(extension, StringComparison.OrdinalIgnoreCase)) return name[..^extension.Length];
         return name;
     }

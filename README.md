@@ -6,10 +6,10 @@ Windows 11을 위한 현대적인 무료 압축·압축 해제 프로그램입�
 
 ## 주요 기능
 
-- ZIP, 7Z, TAR, TAR.GZ 압축 파일 생성
+- ZIP, 7Z, TAR, TAR.GZ 압축 파일 생성 및 설치된 WinRAR를 이용한 RAR 생성
 - ZIP, 7Z, RAR/RAR5, TAR, GZip, BZip2, XZ, Zstandard 파일 열기·목록 보기·검사·압축 해제
 - 압축 파일 안을 폴더처럼 탐색하고 파일을 두 번 클릭하여 열기
-- 열린 ZIP·7Z·TAR·TAR.GZ에 파일을 끌어다 놓아 안전하게 다시 압축
+- 열린 ZIP·7Z·TAR·TAR.GZ·RAR에 파일을 끌어다 놓아 안전하게 다시 압축
 - 파일 및 폴더 드래그 앤 드롭, 검색, 정렬, 진행률 표시와 작업 취소
 - 설정에서 압축하기·압축 풀기 단축키를 원하는 단일 키 또는 키 조합으로 지정
 - 한국어, 영어, 일본어, 중국어 간체·번체, 국한문혼용 UI
@@ -18,13 +18,17 @@ Windows 11을 위한 현대적인 무료 압축·압축 해제 프로그램입�
 - Zip Slip 경로 탈출 방지와 압축 폭탄 완화용 크기·항목 수 제한
 - Windows 기본 앱 등록 및 파일·폴더 우클릭 압축 메뉴
 
-RAR/RAR5는 열기와 압축 해제만 지원합니다. RAR 생성은 독점 포맷 제약으로 지원하지 않습니다.
+RAR/RAR5 열기·검사·압축 풀기·개별 파일 열기는 WinRAR 설치 없이 지원합니다. 솔리드·분할·암호화 RAR도 지원하며, 분할 파일은 모든 조각을 같은 폴더에 두고 첫 번째 파일을 여세요. 암호화 파일은 필요한 시점에 암호 입력 창이 표시됩니다.
+
+분할 RAR에 파일을 추가하려면 먼저 압축을 푼 뒤 추가할 파일과 함께 새 RAR를 만드세요.
+
+RAR 생성·파일 추가에는 별도로 설치한 [WinRAR](https://www.rarlab.com/download.htm)의 `rar.exe`가 필요합니다. 기본 설치 폴더와 PATH에서 자동으로 찾으며, 다른 위치는 `Z_COMPRESSION_RAR_PATH` 환경 변수로 지정할 수 있습니다. 새 압축 창에서 RAR와 압축 수준을 선택하고 선택적으로 암호를 입력하세요. 암호는 파일 내용과 이름을 보호하며 설정에 저장되지 않습니다. WinRAR 사용에는 해당 제품의 라이선스가 적용됩니다. RAR 도구를 앱에 포함하거나 자동 설치하지 않습니다.
 
 ## 설치 및 사용법
 
 1. [Releases](https://github.com/Zernia01/z_compression/releases)에서 최신 `win-x64-setup.exe`를 받습니다.
 2. 설치기를 실행합니다. 바탕화면 바로가기가 기본으로 생성됩니다.
-3. `새 압축`을 눌러 파일 또는 폴더를 추가하고 ZIP, 7Z, TAR, TAR.GZ 중 하나를 선택합니다.
+3. `새 압축`을 눌러 파일 또는 폴더를 추가하고 ZIP, 7Z, TAR, TAR.GZ, RAR 중 하나를 선택합니다.
 4. 기존 압축 파일은 `압축 파일 열기` 또는 드래그 앤 드롭으로 열 수 있습니다.
 5. 압축을 풀려면 `압축 풀기`를 누르고 대상 폴더를 선택합니다.
 6. 자동 업데이트는 `설정 > 일반 > 자동 업데이트`에서 켜거나 끌 수 있으며, `지금 업데이트 확인`으로 수동 검사할 수 있습니다.
@@ -51,10 +55,10 @@ z_compression is a modern, free archive manager for Windows 11. All files are pr
 
 ### Features
 
-- Create ZIP, 7Z, TAR, and TAR.GZ archives.
+- Create ZIP, 7Z, TAR, TAR.GZ, and RAR archives (RAR creation uses an installed WinRAR).
 - Open, browse, test, and extract ZIP, 7Z, RAR/RAR5, TAR, GZip, BZip2, XZ, and Zstandard archives.
 - Browse an archive like a folder and double-click a file to open it.
-- Safely rebuild an open ZIP, 7Z, TAR, or TAR.GZ archive after files are dropped into it.
+- Safely rebuild an open ZIP, 7Z, TAR, TAR.GZ, or RAR archive after files are dropped into it.
 - Drag and drop, search, sort, progress reporting, and cancellation.
 - Assign a single key or key combination for create/extract shortcuts in Settings.
 - Korean, English, Japanese, Simplified/Traditional Chinese, and Korean mixed-script interfaces.
@@ -63,13 +67,17 @@ z_compression is a modern, free archive manager for Windows 11. All files are pr
 - Zip Slip protection and limits that reduce archive-bomb risk.
 - Windows Default Apps registration and an Explorer right-click compression command.
 
-RAR/RAR5 support is read/extract only. Creating RAR archives is unavailable because RAR is a proprietary format.
+Opening, testing, extracting, and previewing RAR/RAR5 archives works without WinRAR, including solid, multipart, and encrypted archives. Keep all volumes together and open the first volume. The app prompts for passwords when needed.
+
+To add files to a multipart RAR, extract it first and create a new RAR with the additional files.
+
+RAR creation and modification require a separately installed [WinRAR](https://www.rarlab.com/download.htm), subject to its license. The app finds `rar.exe` in the standard installation folders or PATH; set `Z_COMPRESSION_RAR_PATH` for a custom location. Select RAR and a compression level in New archive and optionally enter a password to encrypt both content and names. Passwords are kept only in memory. No RAR tool is bundled or automatically installed.
 
 ### Install and use
 
 1. Download the latest `win-x64-setup.exe` from [Releases](https://github.com/Zernia01/z_compression/releases).
 2. Run the installer. A desktop shortcut is selected by default.
-3. Select `New archive`, add files or folders, and choose ZIP, 7Z, TAR, or TAR.GZ.
+3. Select `New archive`, add files or folders, and choose ZIP, 7Z, TAR, TAR.GZ, or RAR.
 4. Open an existing archive with `Open archive` or drag and drop it onto the window.
 5. Select `Extract` and choose a destination folder.
 6. Turn update checks on or off under `Settings > General > Automatic updates`, or use `Check for updates now`.

@@ -48,12 +48,13 @@ public sealed class ServicesTests
     public void VersionComparison_UsesComponents(string current, string latest, bool expected) => Assert.AreEqual(expected, Version.Parse(latest) > Version.Parse(current));
 
     [TestMethod]
-    public void Rar_IsRecognizedAsReadOnlyArchive()
+    public void Rar_SupportsReadingCreationEncryptionAndModification()
     {
         var engine = new ZCompression.Core.Archives.SharpCompressArchiveEngine();
         Assert.IsTrue(engine.Capabilities[ZCompression.Core.Archives.ArchiveFormat.Rar].CanRead);
-        Assert.IsFalse(engine.Capabilities[ZCompression.Core.Archives.ArchiveFormat.Rar].CanWrite);
-        Assert.IsFalse(engine.Capabilities[ZCompression.Core.Archives.ArchiveFormat.Rar].CanModify);
+        Assert.IsTrue(engine.Capabilities[ZCompression.Core.Archives.ArchiveFormat.Rar].CanWrite);
+        Assert.IsTrue(engine.Capabilities[ZCompression.Core.Archives.ArchiveFormat.Rar].CanEncrypt);
+        Assert.IsTrue(engine.Capabilities[ZCompression.Core.Archives.ArchiveFormat.Rar].CanModify);
         Assert.IsTrue(engine.Capabilities[ZCompression.Core.Archives.ArchiveFormat.Zip].CanModify);
     }
 

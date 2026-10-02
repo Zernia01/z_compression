@@ -30,6 +30,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private ArchiveEntryInfo? _selectedEntry;
     private ArchiveBrowserItem? _selectedBrowserItem;
     private string _currentFolder = "";
+    private readonly Dictionary<string, string> _archivePasswords = new(StringComparer.OrdinalIgnoreCase);
+    public Func<string, string?>? RequestArchivePassword { get; set; }
 
     public MainViewModel(IArchiveEngine engine, ILocalizationService localization, ISettingsService settingsService, AppSettings settings)
     {
@@ -82,16 +84,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public async Task OpenArchiveAsync(string path) => await WithOperation(async token =>
     {
         Status = _localization["Opening"];
-        var entries = await _engine.ListAsync(path, cancellationToken: token);
+        var entries = await WithArchivePassword(path, password => _engine.ListAsync(path, password, cancellationToken: token));
         Entries.ReplaceAll(entries);
         CurrentArchivePath = Path.GetFullPath(path); CurrentArchive = Path.GetFileName(path); CurrentFolder = ""; SelectedEntry = null; SelectedBrowserItem = null; RebuildBrowserItems(); Status = string.Format(_localization["EntryCount"], entries.Count);
     });
 
-    public async Task CompressAsync(IReadOnlyList<string> sources, string destination, ArchiveFormat format, CompressionPreset level = CompressionPreset.Normal) => await WithOperation(async token =>
+    public async Task CompressAsync(IReadOnlyList<string> sources, string destination, ArchiveFormat format, CompressionPreset level = CompressionPreset.Normal, string? password = null) => await WithOperation(async token =>
     {
         Status = _localization["Compressing"];
-        await _engine.CompressAsync(new CompressionRequest(sources, destination, format, level), CreateProgress(), token);
-        var entries = await _engine.ListAsync(destination, cancellationToken: token);
+        await _engine.CompressAsync(new CompressionRequest(sources, destination, format, level, password), CreateProgress(), token);
+        var entries = await _engine.ListAsync(destination, password, cancellationToken: token);
+        var fullPath = Path.GetFullPath(destination);
+        _archivePasswords.Remove(fullPath);
+        if (password is not null) _archivePasswords[fullPath] = password;
         Entries.ReplaceAll(entries);
         CurrentArchivePath = Path.GetFullPath(destination); CurrentArchive = Path.GetFileName(destination);
         CurrentFolder = ""; SelectedEntry = null; SelectedBrowserItem = null; RebuildBrowserItems();
@@ -101,7 +106,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public async Task ExtractAsync(string archive, string destination) => await WithOperation(async token =>
     {
         Status = _localization["Extracting"];
-        await _engine.ExtractAsync(new ExtractionRequest(archive, destination), CreateProgress(), token);
+        await WithArchivePassword(archive, password => _engine.ExtractAsync(new ExtractionRequest(archive, destination, password), CreateProgress(), token));
         Status = _localization["ExtractionComplete"];
     });
 
@@ -110,8 +115,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         if (string.IsNullOrWhiteSpace(CurrentArchivePath)) throw new InvalidOperationException("No archive is open.");
         Status = _localization["Compressing"];
         var format = FormatFromPath(CurrentArchivePath);
-        await _engine.UpdateAsync(new ArchiveUpdateRequest(CurrentArchivePath, sources, format, CurrentFolder, CompressionPreset.High), CreateProgress(), token);
-        var entries = await _engine.ListAsync(CurrentArchivePath, cancellationToken: token);
+        await WithArchivePassword(CurrentArchivePath, password => _engine.UpdateAsync(new ArchiveUpdateRequest(CurrentArchivePath, sources, format, CurrentFolder, CompressionPreset.High, password), CreateProgress(), token));
+        var entries = await WithArchivePassword(CurrentArchivePath, password => _engine.ListAsync(CurrentArchivePath, password, cancellationToken: token));
         Entries.ReplaceAll(entries);
         SelectedEntry = null; SelectedBrowserItem = null; RebuildBrowserItems();
         Status = _localization["CompressionComplete"];
@@ -120,13 +125,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public async Task TestAsync(string archive) => await WithOperation(async token =>
     {
         Status = _localization["Testing"];
-        await _engine.TestAsync(archive, cancellationToken: token);
+        await WithArchivePassword(archive, password => _engine.TestAsync(archive, password, cancellationToken: token));
         Status = _localization["ArchiveHealthy"];
     });
 
     public void Cancel() => _cancellation?.Cancel();
     public void ClearArchive()
     {
+        _archivePasswords.Clear();
         Entries.ReplaceAll([]); BrowserItems.ReplaceAll([]); SelectedEntry = null; SelectedBrowserItem = null; CurrentFolder = ""; CurrentArchivePath = string.Empty; CurrentArchive = string.Empty; SearchText = string.Empty; Status = _localization["Ready"];
     }
 
@@ -168,7 +174,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         await WithOperation(async token =>
         {
             Status = string.Format(_localization["OpeningFile"], item.Name);
-            await _engine.ExtractEntryAsync(CurrentArchivePath, item.Path, destination, cancellationToken: token);
+            await WithArchivePassword(CurrentArchivePath, password => _engine.ExtractEntryAsync(CurrentArchivePath, item.Path, destination, password, token));
             Status = _localization["Ready"];
         });
         return destination;
@@ -252,6 +258,30 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     private bool MatchesSearch(string name) => string.IsNullOrWhiteSpace(SearchText) || name.Contains(SearchText, StringComparison.CurrentCultureIgnoreCase);
+    private async Task<T> WithArchivePassword<T>(string archivePath, Func<string?, Task<T>> action)
+    {
+        var fullPath = Path.GetFullPath(archivePath);
+        _archivePasswords.TryGetValue(fullPath, out var password);
+        while (true)
+        {
+            try
+            {
+                var result = await action(password);
+                if (password is not null) _archivePasswords[fullPath] = password;
+                return result;
+            }
+            catch (SharpCompress.Common.CryptographicException) when (RequestArchivePassword is not null)
+            {
+                _archivePasswords.Remove(fullPath);
+                password = RequestArchivePassword(archivePath);
+                if (password is null) throw new OperationCanceledException();
+            }
+        }
+    }
+
+    private Task WithArchivePassword(string archivePath, Func<string?, Task> action) =>
+        WithArchivePassword(archivePath, async password => { await action(password); return true; });
+
     private async Task WithOperation(Func<CancellationToken, Task> operation)
     {
         if (IsBusy) return;

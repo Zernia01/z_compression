@@ -19,6 +19,11 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContext = _viewModel = viewModel;
+        _viewModel.RequestArchivePassword = path =>
+        {
+            var dialog = new ArchivePasswordWindow(path) { Owner = this };
+            return dialog.ShowDialog() == true ? dialog.Password : null;
+        };
         AddHandler(Keyboard.PreviewKeyDownEvent, new KeyEventHandler(OnShortcutKeyDown), true);
     }
 
@@ -50,7 +55,7 @@ public partial class MainWindow : Window
         var dialog = new NewArchiveWindow(initialSources) { Owner = this };
         if (dialog.ShowDialog() == true)
             await RunWithProgressAsync(LocalizationManager.Instance["CompressAction"], Path.GetFileName(dialog.DestinationPath), false,
-                () => _viewModel.CompressAsync(dialog.SelectedSources, dialog.DestinationPath, dialog.SelectedFormat, dialog.SelectedLevel));
+                () => _viewModel.CompressAsync(dialog.SelectedSources, dialog.DestinationPath, dialog.SelectedFormat, dialog.SelectedLevel, dialog.SelectedPassword));
     }
 
     private async void OnTest(object sender, RoutedEventArgs e)
