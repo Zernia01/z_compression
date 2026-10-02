@@ -10,8 +10,7 @@ internal static class ShortcutGesture
     {
         shortcut = string.Empty;
         modifiers &= SupportedModifiers;
-        if (IsModifierKey(key) || key is Key.None or Key.Escape or Key.Tab) return false;
-        if (modifiers == ModifierKeys.None && (key < Key.F1 || key > Key.F24)) return false;
+        if (IsModifierKey(key) || key is Key.None or Key.Escape) return false;
         shortcut = Format(key, modifiers);
         return true;
     }
@@ -36,7 +35,7 @@ internal static class ShortcutGesture
             else if (part.Equals("Shift", StringComparison.OrdinalIgnoreCase)) modifiers |= ModifierKeys.Shift;
             else return false;
         }
-        return modifiers != ModifierKeys.None || key is >= Key.F1 and <= Key.F24;
+        return true;
     }
 
     private static string Format(Key key, ModifierKeys modifiers)

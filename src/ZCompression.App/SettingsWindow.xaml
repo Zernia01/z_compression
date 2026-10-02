@@ -93,14 +93,14 @@
                         <Grid Margin="0,22,0,0">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="220"/></Grid.ColumnDefinitions>
                             <StackPanel VerticalAlignment="Center"><TextBlock Text="{local:Loc CompressShortcut}" FontWeight="SemiBold"/><TextBlock Text="{local:Loc CompressAction}" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,12,0"/></StackPanel>
-                            <Button x:Name="CompressShortcutButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Click="OnShortcutCaptureClick" PreviewKeyDown="OnShortcutKeyDown" LostKeyboardFocus="OnShortcutCaptureLostFocus" Tag="compress" />
+                            <Button x:Name="CompressShortcutButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Click="OnShortcutCaptureClick" Tag="compress" />
                         </Grid>
                         <Grid Margin="0,16,0,0">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="220"/></Grid.ColumnDefinitions>
                             <StackPanel VerticalAlignment="Center"><TextBlock Text="{local:Loc ExtractShortcut}" FontWeight="SemiBold"/><TextBlock Text="{local:Loc ExtractAction}" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,12,0"/></StackPanel>
-                            <Button x:Name="ExtractShortcutButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Click="OnShortcutCaptureClick" PreviewKeyDown="OnShortcutKeyDown" LostKeyboardFocus="OnShortcutCaptureLostFocus" Tag="extract" />
+                            <Button x:Name="ExtractShortcutButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Click="OnShortcutCaptureClick" Tag="extract" />
                         </Grid>
-                        <TextBlock Text="{local:Loc ShortcutCaptureHint}" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap" Margin="0,24,0,0" />
+                        <TextBlock Text="{local:Loc ShortcutCaptureHintV2}" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap" Margin="0,24,0,0" />
                         <TextBlock x:Name="ShortcutValidationText" Foreground="#E35D6A" TextWrapping="Wrap" Margin="0,12,0,0" />
                     </StackPanel>
 
@@ -145,7 +145,7 @@
                         <Separator Background="{DynamicResource BorderBrush}" />
                         <Image Source="/Assets/icon.png" Width="58" Height="58" HorizontalAlignment="Left" Margin="0,24,0,12"/>
                         <TextBlock Text="z_compression" FontSize="20" FontWeight="SemiBold" />
-                        <TextBlock Text="Version 1.0.7 · MIT License" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0" />
+                        <TextBlock Text="Version 1.0.8 · MIT License" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0" />
                         <TextBlock Text="{local:Loc PrivacyStatement}" Margin="0,24,0,0" />
                         <Button Style="{StaticResource AccentButton}" Content="☕  Buy Me a Coffee" HorizontalAlignment="Left" Margin="0,22,0,0" Click="OnDonate" />
                     </StackPanel>

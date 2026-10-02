@@ -15,7 +15,12 @@ public partial class MainWindow : Window
     private bool _sidebarCollapsed;
     private bool _detailsVisible = true;
     private bool _detailsAnimating;
-    public MainWindow(MainViewModel viewModel) { InitializeComponent(); DataContext = _viewModel = viewModel; }
+    public MainWindow(MainViewModel viewModel)
+    {
+        InitializeComponent();
+        DataContext = _viewModel = viewModel;
+        AddHandler(Keyboard.PreviewKeyDownEvent, new KeyEventHandler(OnShortcutKeyDown), true);
+    }
 
     private async void OnOpen(object sender, RoutedEventArgs e)
     {

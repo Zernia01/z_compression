@@ -17,6 +17,7 @@ public partial class SettingsWindow : Window
     {
         InitializeComponent();
         _viewModel = viewModel;
+        AddHandler(Keyboard.PreviewKeyDownEvent, new KeyEventHandler(OnShortcutKeyDown), true);
         SelectTag(LanguageBox, viewModel.Settings.Language);
         SelectTheme(viewModel.Settings.Theme);
         SelectTag(CpuThreadsBox, viewModel.Settings.CpuThreads.ToString(System.Globalization.CultureInfo.InvariantCulture));
@@ -80,7 +81,7 @@ public partial class SettingsWindow : Window
 
     private void OnShortcutKeyDown(object sender, KeyEventArgs e)
     {
-        if (sender is not Button button || button != _shortcutCaptureButton) return;
+        if (_shortcutCaptureButton is not { } button) return;
         e.Handled = true;
         var key = e.Key == Key.System ? e.SystemKey : e.Key;
         if (ShortcutGesture.IsModifierKey(key)) return;
@@ -89,7 +90,7 @@ public partial class SettingsWindow : Window
         var shortcut = string.Empty;
         if (key is not (Key.Delete or Key.Back) && !ShortcutGesture.TryCreate(key, Keyboard.Modifiers, out shortcut))
         {
-            ShortcutValidationText.Text = LocalizationManager.Instance["ShortcutInvalid"];
+            ShortcutValidationText.Text = LocalizationManager.Instance["ShortcutInvalidV2"];
             return;
         }
 
@@ -105,11 +106,6 @@ public partial class SettingsWindow : Window
         _viewModel.SetShortcuts(compress, extract);
         ShortcutValidationText.Text = string.Empty;
         FinishShortcutCapture();
-    }
-
-    private void OnShortcutCaptureLostFocus(object sender, KeyboardFocusChangedEventArgs e)
-    {
-        if (sender == _shortcutCaptureButton) FinishShortcutCapture();
     }
 
     private void FinishShortcutCapture()

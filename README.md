@@ -11,7 +11,7 @@ Windows 11을 위한 현대적인 무료 압축·압축 해제 프로그램입�
 - 압축 파일 안을 폴더처럼 탐색하고 파일을 두 번 클릭하여 열기
 - 열린 ZIP·7Z·TAR·TAR.GZ에 파일을 끌어다 놓아 안전하게 다시 압축
 - 파일 및 폴더 드래그 앤 드롭, 검색, 정렬, 진행률 표시와 작업 취소
-- 설정에서 압축하기·압축 풀기 단축키를 원하는 키 조합으로 지정
+- 설정에서 압축하기·압축 풀기 단축키를 원하는 단일 키 또는 키 조합으로 지정
 - 한국어, 영어, 일본어, 중국어 간체·번체, 국한문혼용 UI
 - 라이트·다크·시스템 테마와 저장되는 성능 설정
 - 앱 시작 시 GitHub Releases 기반 자동 업데이트 확인 및 SHA-256 검증
@@ -56,7 +56,7 @@ z_compression is a modern, free archive manager for Windows 11. All files are pr
 - Browse an archive like a folder and double-click a file to open it.
 - Safely rebuild an open ZIP, 7Z, TAR, or TAR.GZ archive after files are dropped into it.
 - Drag and drop, search, sort, progress reporting, and cancellation.
-- Assign custom create/extract keyboard shortcuts in Settings.
+- Assign a single key or key combination for create/extract shortcuts in Settings.
 - Korean, English, Japanese, Simplified/Traditional Chinese, and Korean mixed-script interfaces.
 - Light, dark, and system themes with persistent performance settings.
 - Automatic update checks through GitHub Releases with package size and SHA-256 verification.

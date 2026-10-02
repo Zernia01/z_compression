@@ -4,7 +4,7 @@
         xmlns:local="clr-namespace:ZCompression.App"
         Title="z_compression" Height="800" Width="1280" MinHeight="650" MinWidth="980"
         WindowStartupLocation="CenterScreen" Background="{DynamicResource WindowBackgroundBrush}"
-        Foreground="{DynamicResource PrimaryTextBrush}" AllowDrop="True" Drop="OnDrop" DragOver="OnDragOver" PreviewKeyDown="OnShortcutKeyDown">
+        Foreground="{DynamicResource PrimaryTextBrush}" AllowDrop="True" Drop="OnDrop" DragOver="OnDragOver">
     <Window.Resources>
         <LinearGradientBrush x:Key="LogoGradient" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#9B87FF" Offset="0" /><GradientStop Color="#6552DF" Offset="1" />
