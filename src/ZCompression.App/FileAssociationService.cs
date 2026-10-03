@@ -43,7 +43,29 @@ internal static class FileAssociationService
         using (var registeredApplications = Registry.CurrentUser.CreateSubKey(@"Software\RegisteredApplications"))
             registeredApplications.SetValue(RegisteredApplicationName, CapabilitiesPath, RegistryValueKind.String);
 
+        RegisterContextMenus(executable);
+
         SHChangeNotify(0x08000000, 0, IntPtr.Zero, IntPtr.Zero);
+    }
+
+    internal static void RegisterContextMenus(string executablePath)
+    {
+        var executable = Path.GetFullPath(executablePath);
+        foreach (var itemType in new[] { "*", "Directory" })
+            RegisterMenu($@"Software\Classes\{itemType}\shell\ZCompression.Compress", LocalizationManager.Instance["ShellCompressNow"], "--compress-here", executable);
+        // SystemFileAssociations keeps extraction available when another app is the default.
+        foreach (var extension in SupportedExtensions)
+            RegisterMenu($@"Software\Classes\SystemFileAssociations\{extension}\shell\ZCompression.Extract", LocalizationManager.Instance["ShellExtractNow"], "--extract-here", executable);
+        SHChangeNotify(0x08000000, 0, IntPtr.Zero, IntPtr.Zero);
+    }
+
+    private static void RegisterMenu(string path, string label, string argument, string executable)
+    {
+        using var key = Registry.CurrentUser.CreateSubKey(path);
+        key.SetValue("MUIVerb", label, RegistryValueKind.String);
+        key.SetValue("Icon", $"\"{executable}\",0", RegistryValueKind.String);
+        key.SetValue("MultiSelectModel", "Single", RegistryValueKind.String);
+        SetDefaultValue($@"{path}\command", $"\"{executable}\" {argument} \"%1\"");
     }
 
     internal static void OpenDefaultAppsSettings()

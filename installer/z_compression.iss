@@ -1,5 +1,5 @@
 #define MyAppName "z_compression"
-#define MyAppVersion "1.0.9"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "z_compression contributors"
 #define MyAppExeName "z_compression.exe"
 
@@ -65,14 +65,51 @@ Root: HKCU; Subkey: "Software\ZCompression\Capabilities\FileAssociations"; Value
 Root: HKCU; Subkey: "Software\ZCompression\Capabilities\FileAssociations"; ValueType: string; ValueName: ".xz"; ValueData: "ZCompression.Archive"
 Root: HKCU; Subkey: "Software\ZCompression\Capabilities\FileAssociations"; ValueType: string; ValueName: ".zst"; ValueData: "ZCompression.Archive"
 Root: HKCU; Subkey: "Software\RegisteredApplications"; ValueType: string; ValueName: "z_compression"; ValueData: "Software\ZCompression\Capabilities"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\Classes\*\shell\ZCompression.Compress"; ValueType: string; ValueName: "MUIVerb"; ValueData: "z_compression으로 압축하기"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\*\shell\ZCompression.Compress"; ValueType: string; ValueName: "MUIVerb"; ValueData: "z_compression으로 바로 압축(&Z)"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\*\shell\ZCompression.Compress"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName},0"
 Root: HKCU; Subkey: "Software\Classes\*\shell\ZCompression.Compress"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Single"
-Root: HKCU; Subkey: "Software\Classes\*\shell\ZCompression.Compress\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" --compress ""%1"""
-Root: HKCU; Subkey: "Software\Classes\Directory\shell\ZCompression.Compress"; ValueType: string; ValueName: "MUIVerb"; ValueData: "z_compression으로 압축하기"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\*\shell\ZCompression.Compress\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" --compress-here ""%1"""
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\ZCompression.Compress"; ValueType: string; ValueName: "MUIVerb"; ValueData: "z_compression으로 바로 압축(&Z)"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\Directory\shell\ZCompression.Compress"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName},0"
 Root: HKCU; Subkey: "Software\Classes\Directory\shell\ZCompression.Compress"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Single"
-Root: HKCU; Subkey: "Software\Classes\Directory\shell\ZCompression.Compress\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" --compress ""%1"""
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\ZCompression.Compress\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" --compress-here ""%1"""
+
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.zip\shell\ZCompression.Extract"; ValueType: string; ValueName: "MUIVerb"; ValueData: "z_compression으로 폴더에 풀기(&U)"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.zip\shell\ZCompression.Extract"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.zip\shell\ZCompression.Extract"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Single"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.zip\shell\ZCompression.Extract\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" --extract-here ""%1"""
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.7z\shell\ZCompression.Extract"; ValueType: string; ValueName: "MUIVerb"; ValueData: "z_compression으로 폴더에 풀기(&U)"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.7z\shell\ZCompression.Extract"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.7z\shell\ZCompression.Extract"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Single"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.7z\shell\ZCompression.Extract\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" --extract-here ""%1"""
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.rar\shell\ZCompression.Extract"; ValueType: string; ValueName: "MUIVerb"; ValueData: "z_compression으로 폴더에 풀기(&U)"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.rar\shell\ZCompression.Extract"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.rar\shell\ZCompression.Extract"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Single"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.rar\shell\ZCompression.Extract\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" --extract-here ""%1"""
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.tar\shell\ZCompression.Extract"; ValueType: string; ValueName: "MUIVerb"; ValueData: "z_compression으로 폴더에 풀기(&U)"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.tar\shell\ZCompression.Extract"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.tar\shell\ZCompression.Extract"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Single"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.tar\shell\ZCompression.Extract\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" --extract-here ""%1"""
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.gz\shell\ZCompression.Extract"; ValueType: string; ValueName: "MUIVerb"; ValueData: "z_compression으로 폴더에 풀기(&U)"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.gz\shell\ZCompression.Extract"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.gz\shell\ZCompression.Extract"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Single"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.gz\shell\ZCompression.Extract\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" --extract-here ""%1"""
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.tgz\shell\ZCompression.Extract"; ValueType: string; ValueName: "MUIVerb"; ValueData: "z_compression으로 폴더에 풀기(&U)"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.tgz\shell\ZCompression.Extract"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.tgz\shell\ZCompression.Extract"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Single"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.tgz\shell\ZCompression.Extract\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" --extract-here ""%1"""
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.bz2\shell\ZCompression.Extract"; ValueType: string; ValueName: "MUIVerb"; ValueData: "z_compression으로 폴더에 풀기(&U)"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.bz2\shell\ZCompression.Extract"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.bz2\shell\ZCompression.Extract"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Single"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.bz2\shell\ZCompression.Extract\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" --extract-here ""%1"""
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.xz\shell\ZCompression.Extract"; ValueType: string; ValueName: "MUIVerb"; ValueData: "z_compression으로 폴더에 풀기(&U)"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.xz\shell\ZCompression.Extract"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.xz\shell\ZCompression.Extract"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Single"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.xz\shell\ZCompression.Extract\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" --extract-here ""%1"""
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.zst\shell\ZCompression.Extract"; ValueType: string; ValueName: "MUIVerb"; ValueData: "z_compression으로 폴더에 풀기(&U)"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.zst\shell\ZCompression.Extract"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.zst\shell\ZCompression.Extract"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Single"
+Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.zst\shell\ZCompression.Extract\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" --extract-here ""%1"""
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch z_compression"; Flags: nowait postinstall skipifsilent

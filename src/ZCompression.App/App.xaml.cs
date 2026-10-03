@@ -21,7 +21,21 @@ public partial class App : Application
         ThemeManager.Apply(settings.Theme);
         var localization = new JsonLocalizationService(Path.Combine(AppContext.BaseDirectory, "Localization"), settings.Language);
         LocalizationManager.Instance.Initialize(localization);
+        try
+        {
+            if (Environment.ProcessPath is { } executable) FileAssociationService.RegisterContextMenus(executable);
+        }
+        catch (UnauthorizedAccessException) { }
+        catch (System.Security.SecurityException) { }
+        catch (IOException) { }
         var viewModel = new MainViewModel(new SharpCompressArchiveEngine(), localization, settingsService, settings);
+        var command = e.Args.FirstOrDefault();
+        if (command?.Equals("--compress-here", StringComparison.OrdinalIgnoreCase) == true ||
+            command?.Equals("--extract-here", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            await RunQuickOperationAsync(viewModel, e.Args, command.Equals("--extract-here", StringComparison.OrdinalIgnoreCase));
+            return;
+        }
         var mainWindow = new MainWindow(viewModel);
         MainWindow = mainWindow;
         mainWindow.Show();
@@ -44,6 +58,42 @@ public partial class App : Application
         }
         if (e.Args.Length == 0 && settings.CheckForUpdatesAtStartup)
             await UpdateCoordinator.CheckAndInstallAsync(mainWindow, showUpToDateMessage: false);
+    }
+
+    private async Task RunQuickOperationAsync(MainViewModel viewModel, string[] args, bool extract)
+    {
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        var sources = args.Skip(1).ToArray();
+        var operation = LocalizationManager.Instance[extract ? "ExtractAction" : "CompressAction"];
+        var progressWindow = new OperationProgressWindow(viewModel, operation, Path.GetFileName(sources.FirstOrDefault() ?? ""), extract);
+        MainWindow = progressWindow;
+        progressWindow.Show();
+        viewModel.RequestArchivePassword = path =>
+        {
+            var dialog = new ArchivePasswordWindow(path) { Owner = progressWindow };
+            return dialog.ShowDialog() == true ? dialog.Password : null;
+        };
+        var exitCode = 0;
+        try
+        {
+            if (extract)
+            {
+                if (sources.Length != 1 || !MainViewModel.IsArchivePath(sources[0])) throw new InvalidDataException("Select one supported archive.");
+                await viewModel.QuickExtractAsync(sources[0]);
+            }
+            else await viewModel.QuickCompressAsync(sources);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception exception)
+        {
+            exitCode = 1;
+            MessageBox.Show(progressWindow, viewModel.FriendlyError(exception), "z_compression", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            progressWindow.Finish();
+            Shutdown(exitCode);
+        }
     }
 
     internal static void ApplyProcessPriority(string priority)

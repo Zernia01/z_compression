@@ -18,6 +18,12 @@ Windows 11을 위한 현대적인 무료 압축·압축 해제 프로그램입�
 - Zip Slip 경로 탈출 방지와 압축 폭탄 완화용 크기·항목 수 제한
 - Windows 기본 앱 등록 및 파일·폴더 우클릭 압축 메뉴
 
+### 탐색기 메뉴에서 바로 압축·풀기 (1.1.0)
+
+파일 또는 폴더를 선택하고 우클릭 메뉴를 연 다음 `Z`를 누르면 옵션 창 없이 원본 옆에 압축 파일을 만듭니다. 기본값은 ZIP·높은 압축입니다. 압축 파일에서는 `U`를 누르면 원본 옆의 파일 이름 폴더에 바로 풉니다. 같은 이름이 있으면 `(2)`, `(3)`을 붙이며 기존 파일과 폴더를 덮어쓰지 않습니다. 작업 중에는 진행 창에서 취소할 수 있고 암호화 파일은 암호를 묻습니다.
+
+Windows 11에서는 `추가 옵션 표시` 메뉴에서 사용하세요. `Shift+F10`으로 이 메뉴를 바로 열 수도 있습니다. 메뉴에 다른 프로그램의 같은 문자 키가 있으면 Windows가 항목을 순환 선택하므로 원하는 항목에서 Enter를 누르세요. 앱 내부의 설정 가능한 단축키와 탐색기 메뉴 키는 별개입니다.
+
 RAR/RAR5 열기·검사·압축 풀기·개별 파일 열기는 WinRAR 설치 없이 지원합니다. 솔리드·분할·암호화 RAR도 지원하며, 분할 파일은 모든 조각을 같은 폴더에 두고 첫 번째 파일을 여세요. 암호화 파일은 필요한 시점에 암호 입력 창이 표시됩니다.
 
 분할 RAR에 파일을 추가하려면 먼저 압축을 푼 뒤 추가할 파일과 함께 새 RAR를 만드세요.
@@ -66,6 +72,12 @@ z_compression is a modern, free archive manager for Windows 11. All files are pr
 - Automatic update checks through GitHub Releases with package size and SHA-256 verification.
 - Zip Slip protection and limits that reduce archive-bomb risk.
 - Windows Default Apps registration and an Explorer right-click compression command.
+
+### Quick Explorer menu actions (1.1.0)
+
+Select a file or folder, open its context menu, and press `Z` to create an archive beside the source without an options dialog (ZIP/high compression by default). For an archive, press `U` to extract into a sibling folder named after it. Existing files and folders are preserved by adding `(2)`, `(3)`, and so on. The progress window allows cancellation; encrypted archives prompt for a password.
+
+On Windows 11 use Show more options, or open the classic menu directly with `Shift+F10`. If another menu entry uses the same letter, Windows cycles through matching entries; press Enter on the desired entry. These menu keys are separate from configurable shortcuts inside the app.
 
 Opening, testing, extracting, and previewing RAR/RAR5 archives works without WinRAR, including solid, multipart, and encrypted archives. Keep all volumes together and open the first volume. The app prompts for passwords when needed.
 

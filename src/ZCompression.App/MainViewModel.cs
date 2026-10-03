@@ -130,6 +130,26 @@ public sealed class MainViewModel : INotifyPropertyChanged
     });
 
     public void Cancel() => _cancellation?.Cancel();
+
+    public async Task QuickCompressAsync(IReadOnlyList<string> sources) => await WithOperation(async token =>
+    {
+        Status = _localization["Compressing"];
+        var format = Settings.DefaultArchiveFormat.ToLowerInvariant() switch
+        {
+            "7z" or "sevenzip" => ArchiveFormat.SevenZip, "rar" => ArchiveFormat.Rar,
+            "tar" => ArchiveFormat.Tar, "tar.gz" or "targzip" => ArchiveFormat.TarGZip, _ => ArchiveFormat.Zip,
+        };
+        var level = Enum.TryParse<CompressionPreset>(Settings.DefaultCompressionLevel, true, out var preset) ? preset : CompressionPreset.High;
+        await new QuickArchiveService(_engine).CompressAsync(sources, format, level, CreateProgress(), token);
+        Status = _localization["CompressionComplete"];
+    });
+
+    public async Task QuickExtractAsync(string archive) => await WithOperation(async token =>
+    {
+        Status = _localization["Extracting"];
+        await WithArchivePassword(archive, password => new QuickArchiveService(_engine).ExtractAsync(archive, password, CreateProgress(), token));
+        Status = _localization["ExtractionComplete"];
+    });
     public void ClearArchive()
     {
         _archivePasswords.Clear();

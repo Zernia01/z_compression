@@ -64,10 +64,9 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             ArgumentException.ThrowIfNullOrWhiteSpace(entryPath);
             ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
             cancellationToken.ThrowIfCancellationRequested();
-            using var archive = ArchiveFactory.OpenArchive(archivePath, CreateReaderOptions(password, null, archivePath));
             var normalized = entryPath.Replace('\\', '/').TrimStart('/');
             // Reading preceding entries is necessary to reconstruct the solid dictionary.
-            foreach (var (entry, openStream) in ReadEntries(archive))
+            foreach (var (entry, openStream) in ReadEntries(archivePath, password, null))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (entry.IsDirectory || !string.Equals((entry.Key ?? string.Empty).Replace('\\', '/').TrimStart('/'), normalized, StringComparison.Ordinal)) continue;
@@ -106,10 +105,10 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
                 }
             }
 
-            using var archive = ArchiveFactory.OpenArchive(file, CreateReaderOptions(password, legacyEncoding, file.FullName));
-            var entries = archive.Entries.Select(entry =>
+            var entries = ReadEntries(file.FullName, password, legacyEncoding, metadataOnly: true).Select(item =>
                 {
                     cancellationToken.ThrowIfCancellationRequested();
+                    var entry = item.Entry;
                     return new ArchiveEntryInfo(entry.Key ?? string.Empty, entry.Key ?? string.Empty, entry.Size, entry.CompressedSize, entry.LastModifiedTime, GetChecksum(entry), entry.IsDirectory);
                 })
                 .ToArray();
@@ -123,8 +122,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
     public Task TestAsync(string archivePath, string? password = null, CancellationToken cancellationToken = default) =>
         Task.Run(() =>
         {
-            using var archive = ArchiveFactory.OpenArchive(archivePath, CreateReaderOptions(password, null, archivePath));
-            foreach (var (entry, openStream) in ReadEntries(archive))
+            foreach (var (entry, openStream) in ReadEntries(archivePath, password, null))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (entry.IsDirectory) continue;
@@ -179,8 +177,11 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
     private static void ExtractCore(ExtractionRequest request, IProgress<ArchiveProgress>? progress, CancellationToken token)
     {
         Directory.CreateDirectory(request.DestinationDirectory);
-        using var archive = ArchiveFactory.OpenArchive(request.ArchivePath, CreateReaderOptions(request.Password, request.LegacyEncoding, request.ArchivePath));
-        var entries = archive.Entries.ToArray();
+        var entries = ReadEntries(request.ArchivePath, request.Password, request.LegacyEncoding, metadataOnly: true).Select(item =>
+        {
+            token.ThrowIfCancellationRequested();
+            return new { item.Entry.IsDirectory, item.Entry.Size };
+        }).ToArray();
         if (entries.Length > request.MaximumFileCount) throw new InvalidDataException("Archive contains too many entries.");
         var total = entries.Where(e => !e.IsDirectory).Sum(e => e.Size);
         if (total > request.MaximumExpandedBytes) throw new InvalidDataException("Archive exceeds the configured expanded-size limit.");
@@ -188,7 +189,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         var processed = 0L;
         var completed = 0;
         var watch = Stopwatch.StartNew();
-        foreach (var (entry, openStream) in ReadEntries(archive))
+        foreach (var (entry, openStream) in ReadEntries(request.ArchivePath, request.Password, request.LegacyEncoding))
         {
             token.ThrowIfCancellationRequested();
             RejectLink(entry);
@@ -309,13 +310,39 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         }
     }
 
-    private static string? GetChecksum(IArchiveEntry entry)
+    private static string? GetChecksum(IEntry entry)
     {
         // RAR5 may use BLAKE2 or omit the checksum entirely. SharpCompress's Crc
         // property assumes a four-byte CRC, so it is not suitable as RAR metadata.
         // Integrity is still verified when the entry stream is read.
         if (entry.IsDirectory || entry is RarEntry) return null;
         return entry.Crc.ToString("X8");
+    }
+
+    private static IEnumerable<(IEntry Entry, Func<Stream> OpenStream)> ReadEntries(string archivePath, string? password, System.Text.Encoding? encoding, bool metadataOnly = false)
+    {
+        var options = CreateReaderOptions(password, encoding, archivePath);
+        // Compressed TAR requires the streaming reader rather than the raw TAR archive API.
+        var compressedTar = new[] { ".tar.gz", ".tgz", ".tar.bz2", ".tar.xz", ".tar.zst" }
+            .Any(extension => archivePath.EndsWith(extension, StringComparison.OrdinalIgnoreCase));
+        if (compressedTar)
+        {
+            using var input = File.OpenRead(archivePath);
+            using var reader = ReaderFactory.OpenReader(input, options);
+            while (reader.MoveToNextEntry()) yield return (reader.Entry, reader.OpenEntryStream);
+        }
+        else
+        {
+            using var archive = ArchiveFactory.OpenArchive(archivePath, options);
+            if (metadataOnly)
+            {
+                foreach (var entry in archive.Entries) yield return (entry, entry.OpenEntryStream);
+            }
+            else
+            {
+                foreach (var item in ReadEntries(archive)) yield return item;
+            }
+        }
     }
 
     private static ReaderOptions CreateReaderOptions(string? password, System.Text.Encoding? encoding, string archivePath) => new()

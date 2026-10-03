@@ -6,4 +6,5 @@
   "CurrentFile":"現在 파일","ProgressItems":"進行 項目","ProcessedSize":"處理 容量","Speed":"處理 速度","Elapsed":"經過 時間","Remaining":"남은 時間","BackgroundContinue":"窓을 닫아도 作業은 백그라운드에서 繼續됩니다.","Background":"백그라운드","Stop":"中止","SelectExtractionDestination":"壓縮을 풀 位置 選擇","ExtractAction":"壓縮 풀기","CompressAction":"壓縮하기","ExecutableWarning":"壓縮 파일 안의 實行 可能 파일은 컴퓨터에 危險할 수 있습니다. 信賴할 수 있는 파일만 여십시오.\n\n繼續 여시겠습니까?","ExecutableWarningTitle":"實行 파일 열기 警告","Archives":"壓縮 파일","AllFiles":"모든 파일","DefaultAppsError":"基本 앱 設定을 열 수 없습니다.","OpenArchiveError":"壓縮 파일을 열 수 없습니다.","UnexpectedErrorLog":"豫期하지 않은 誤謬가 發生했습니다. 診斷 情報가 로컬 로그에 記錄되었습니다."
   ,"ShortcutCaptureHintV2":"버튼을 누른 後 願하는 單一 키 또는 키 組合을 入力하십시오. Delete 키로 解除할 수 있습니다.","ShortcutInvalidV2":"使用할 수 없는 키입니다. 다른 單一 키 또는 키 組合을 入力하십시오."
 ,"ArchivePassword":"壓縮 파일 暗號","PasswordPrompt":"壓縮 파일의 暗號를 입력하세요. 이미 입력했다면 暗號를 확인하고 다시 시도하세요.","OptionalPassword":"暗號 (선택)","RarCreationHint":"RAR 壓縮은 설치된 WinRAR를 사용합니다. 壓縮 解制는 WinRAR 없이 가능합니다.","RarToolRequired":"RAR 壓縮에는 WinRAR 설치가 필요합니다. 또는 Z_COMPRESSION_RAR_PATH에 rar.exe 경로를 지정하세요."
+,"ShellExtractNow":"z_compression으로 폴더에 풀기(&U)","ShellCompressNow":"z_compression으로 바로 壓縮(&Z)"
 }
