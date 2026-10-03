@@ -23,7 +23,7 @@ public partial class App : Application
         LocalizationManager.Instance.Initialize(localization);
         try
         {
-            if (Environment.ProcessPath is { } executable) FileAssociationService.RegisterContextMenus(executable, settings);
+            if (Environment.ProcessPath is { } executable) FileAssociationService.RegisterCurrentUser(executable, settings);
         }
         catch (UnauthorizedAccessException) { }
         catch (System.Security.SecurityException) { }

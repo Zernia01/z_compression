@@ -1,5 +1,5 @@
 #define MyAppName "z_compression"
-#define MyAppVersion "1.1.1"
+#define MyAppVersion "1.1.2"
 #define MyAppPublisher "z_compression contributors"
 #define MyAppExeName "z_compression.exe"
 
@@ -38,6 +38,18 @@ Name: "{group}\z_compression"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\z_compression"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Registry]
+Root: HKCU; Subkey: "Software\Classes\ZCompression.Zip"; ValueType: string; ValueData: "z_compression ZIP archive"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\ZCompression.Zip\DefaultIcon"; ValueType: string; ValueData: """{app}\Assets\FileTypes\zip.ico"",0"
+Root: HKCU; Subkey: "Software\Classes\ZCompression.Zip\shell\open\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+Root: HKCU; Subkey: "Software\Classes\.zip\OpenWithProgids"; ValueType: none; ValueName: "ZCompression.Zip"; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\ZCompression.SevenZip"; ValueType: string; ValueData: "z_compression 7Z archive"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\ZCompression.SevenZip\DefaultIcon"; ValueType: string; ValueData: """{app}\Assets\FileTypes\7z.ico"",0"
+Root: HKCU; Subkey: "Software\Classes\ZCompression.SevenZip\shell\open\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+Root: HKCU; Subkey: "Software\Classes\.7z\OpenWithProgids"; ValueType: none; ValueName: "ZCompression.SevenZip"; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\ZCompression.Rar"; ValueType: string; ValueData: "z_compression RAR archive"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\ZCompression.Rar\DefaultIcon"; ValueType: string; ValueData: """{app}\Assets\FileTypes\rar.ico"",0"
+Root: HKCU; Subkey: "Software\Classes\ZCompression.Rar\shell\open\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+Root: HKCU; Subkey: "Software\Classes\.rar\OpenWithProgids"; ValueType: none; ValueName: "ZCompression.Rar"; Flags: uninsdeletevalue
 Root: HKCU; Subkey: "Software\Classes\ZCompression.Archive"; ValueType: string; ValueData: "z_compression archive"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\ZCompression.Archive\DefaultIcon"; ValueType: string; ValueData: "{app}\{#MyAppExeName},0"
 Root: HKCU; Subkey: "Software\Classes\ZCompression.Archive\shell\open\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
@@ -55,9 +67,9 @@ Root: HKCU; Subkey: "Software\Classes\Applications\{#MyAppExeName}\SupportedType
 Root: HKCU; Subkey: "Software\Classes\Applications\{#MyAppExeName}\SupportedTypes"; ValueType: string; ValueName: ".zst"; ValueData: ""
 Root: HKCU; Subkey: "Software\ZCompression\Capabilities"; ValueType: string; ValueName: "ApplicationName"; ValueData: "{#MyAppName}"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\ZCompression\Capabilities"; ValueType: string; ValueName: "ApplicationDescription"; ValueData: "빠르고 안전한 Windows 압축 및 압축 해제 프로그램"
-Root: HKCU; Subkey: "Software\ZCompression\Capabilities\FileAssociations"; ValueType: string; ValueName: ".zip"; ValueData: "ZCompression.Archive"
-Root: HKCU; Subkey: "Software\ZCompression\Capabilities\FileAssociations"; ValueType: string; ValueName: ".7z"; ValueData: "ZCompression.Archive"
-Root: HKCU; Subkey: "Software\ZCompression\Capabilities\FileAssociations"; ValueType: string; ValueName: ".rar"; ValueData: "ZCompression.Archive"
+Root: HKCU; Subkey: "Software\ZCompression\Capabilities\FileAssociations"; ValueType: string; ValueName: ".zip"; ValueData: "ZCompression.Zip"
+Root: HKCU; Subkey: "Software\ZCompression\Capabilities\FileAssociations"; ValueType: string; ValueName: ".7z"; ValueData: "ZCompression.SevenZip"
+Root: HKCU; Subkey: "Software\ZCompression\Capabilities\FileAssociations"; ValueType: string; ValueName: ".rar"; ValueData: "ZCompression.Rar"
 Root: HKCU; Subkey: "Software\ZCompression\Capabilities\FileAssociations"; ValueType: string; ValueName: ".tar"; ValueData: "ZCompression.Archive"
 Root: HKCU; Subkey: "Software\ZCompression\Capabilities\FileAssociations"; ValueType: string; ValueName: ".gz"; ValueData: "ZCompression.Archive"
 Root: HKCU; Subkey: "Software\ZCompression\Capabilities\FileAssociations"; ValueType: string; ValueName: ".tgz"; ValueData: "ZCompression.Archive"

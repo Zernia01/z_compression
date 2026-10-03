@@ -24,6 +24,21 @@ internal static class FileAssociationService
         SetDefaultValue($@"Software\Classes\{ProgId}\DefaultIcon", $"\"{executable}\",0");
         SetDefaultValue($@"Software\Classes\{ProgId}\shell\open\command", openCommand);
 
+        foreach (var extension in new[] { ".zip", ".7z", ".rar" })
+        {
+            var formatProgId = GetProgId(extension);
+            var iconPath = Path.Combine(Path.GetDirectoryName(executable)!, "Assets", "FileTypes", extension[1..] + ".ico");
+            SetDefaultValue($@"Software\Classes\{formatProgId}", $"z_compression {extension[1..].ToUpperInvariant()} archive");
+            SetDefaultValue($@"Software\Classes\{formatProgId}\DefaultIcon", $"\"{iconPath}\",0");
+            SetDefaultValue($@"Software\Classes\{formatProgId}\shell\open\command", openCommand);
+            using var openWith = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{extension}\OpenWithProgids");
+            openWith.SetValue(formatProgId, Array.Empty<byte>(), RegistryValueKind.None);
+            // Migrate our unprotected legacy association without replacing another app's choice.
+            using var extensionKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{extension}");
+            if (extensionKey.GetValue(null) is string previous && previous == ProgId)
+                extensionKey.SetValue(null, formatProgId, RegistryValueKind.String);
+        }
+
         var applicationPath = $@"Software\Classes\Applications\{Path.GetFileName(executable)}";
         using (var application = Registry.CurrentUser.CreateSubKey(applicationPath))
             application.SetValue("FriendlyAppName", RegisteredApplicationName, RegistryValueKind.String);
@@ -40,7 +55,7 @@ internal static class FileAssociationService
         }
         using (var associations = Registry.CurrentUser.CreateSubKey($@"{CapabilitiesPath}\FileAssociations"))
             foreach (var extension in SupportedExtensions)
-                associations.SetValue(extension, ProgId, RegistryValueKind.String);
+                associations.SetValue(extension, GetProgId(extension), RegistryValueKind.String);
         using (var registeredApplications = Registry.CurrentUser.CreateSubKey(@"Software\RegisteredApplications"))
             registeredApplications.SetValue(RegisteredApplicationName, CapabilitiesPath, RegistryValueKind.String);
 
@@ -48,6 +63,14 @@ internal static class FileAssociationService
 
         SHChangeNotify(0x08000000, 0, IntPtr.Zero, IntPtr.Zero);
     }
+
+    private static string GetProgId(string extension) => extension switch
+    {
+        ".zip" => "ZCompression.Zip",
+        ".7z" => "ZCompression.SevenZip",
+        ".rar" => "ZCompression.Rar",
+        _ => ProgId
+    };
 
     internal static void RegisterContextMenus(string executablePath, AppSettings settings)
     {

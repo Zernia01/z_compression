@@ -103,3 +103,11 @@ On Windows 11, the Explorer compression command may appear under `Show more opti
 Settings are stored as UTF-8 JSON under `%LOCALAPPDATA%\z_compression`. Update checks only contact this repository's GitHub Releases API. Downloaded update packages must match the manifest size and SHA-256 hash before installation.
 
 Licensed under the [MIT License](LICENSE). Third-party notices are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+### 파일 형식 아이콘 (1.1.2)
+
+ZIP은 파란색, RAR은 보라색, 7Z는 회색의 전용 아이콘을 사용합니다. 설치 파일과 포터블 배포에 아이콘이 포함되며 앱 실행 시 파일 형식 등록을 갱신합니다. 이전 공통 아이콘이 계속 표시되면 설정의 기본 앱 선택에서 ZIP·RAR·7Z를 z_compression에 다시 연결하세요.
+
+### Archive format icons (1.1.2)
+
+ZIP uses the blue icon, RAR the purple icon, and 7Z the gray icon. Both installed and portable packages include the icons and refresh registration on startup. If the old shared icon remains, use the default-app action in Settings to associate each format with z_compression again.
