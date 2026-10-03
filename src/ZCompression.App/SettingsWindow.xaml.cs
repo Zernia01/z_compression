@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using ZCompression.Core.Settings;
 
 namespace ZCompression.App;
 
@@ -79,7 +80,7 @@ public partial class SettingsWindow : Window
         Keyboard.Focus(button);
     }
 
-    private void OnShortcutKeyDown(object sender, KeyEventArgs e)
+    private async void OnShortcutKeyDown(object sender, KeyEventArgs e)
     {
         if (_shortcutCaptureButton is not { } button) return;
         e.Handled = true;
@@ -95,7 +96,9 @@ public partial class SettingsWindow : Window
         }
 
         var otherShortcut = Equals(button.Tag, "compress") ? _viewModel.Settings.ExtractShortcut : _viewModel.Settings.CompressShortcut;
-        if (!string.IsNullOrEmpty(shortcut) && shortcut.Equals(otherShortcut, StringComparison.OrdinalIgnoreCase))
+        var menuKey = ExplorerMenuShortcut.GetAccessKey(shortcut);
+        if (!string.IsNullOrEmpty(shortcut) && (shortcut.Equals(otherShortcut, StringComparison.OrdinalIgnoreCase) ||
+            (menuKey is not null && menuKey == ExplorerMenuShortcut.GetAccessKey(otherShortcut))))
         {
             ShortcutValidationText.Text = LocalizationManager.Instance["ShortcutConflict"];
             return;
@@ -106,6 +109,15 @@ public partial class SettingsWindow : Window
         _viewModel.SetShortcuts(compress, extract);
         ShortcutValidationText.Text = string.Empty;
         FinishShortcutCapture();
+        try
+        {
+            await _viewModel.SaveSettingsAsync();
+            if (Environment.ProcessPath is { } executable) FileAssociationService.RegisterContextMenus(executable, _viewModel.Settings);
+        }
+        catch (Exception exception) when (exception is System.IO.IOException or UnauthorizedAccessException or System.Security.SecurityException)
+        {
+            ShortcutValidationText.Text = LocalizationManager.Instance["ShortcutSyncFailed"];
+        }
     }
 
     private void FinishShortcutCapture()
@@ -160,7 +172,7 @@ public partial class SettingsWindow : Window
         try
         {
             var executable = Environment.ProcessPath ?? throw new InvalidOperationException(LocalizationManager.Instance["UnexpectedError"]);
-            FileAssociationService.RegisterCurrentUser(executable);
+            FileAssociationService.RegisterCurrentUser(executable, _viewModel.Settings);
             FileAssociationService.OpenDefaultAppsSettings();
         }
         catch (Exception exception)

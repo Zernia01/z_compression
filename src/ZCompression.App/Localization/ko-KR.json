@@ -6,5 +6,6 @@
   "CurrentFile":"현재 파일","ProgressItems":"진행 항목","ProcessedSize":"처리 용량","Speed":"처리 속도","Elapsed":"경과 시간","Remaining":"남은 시간","BackgroundContinue":"창을 닫아도 작업은 백그라운드에서 계속됩니다.","Background":"백그라운드","Stop":"중지","SelectExtractionDestination":"압축을 풀 위치 선택","ExtractAction":"압축 풀기","CompressAction":"압축하기","ExecutableWarning":"압축 파일 안의 실행 가능한 파일은 컴퓨터에 위험할 수 있습니다. 신뢰할 수 있는 파일인 경우에만 여세요.\n\n계속 여시겠습니까?","ExecutableWarningTitle":"실행 파일 열기 경고","Archives":"압축 파일","AllFiles":"모든 파일","DefaultAppsError":"기본 앱 설정을 열 수 없습니다.","OpenArchiveError":"압축 파일을 열 수 없습니다.","UnexpectedErrorLog":"예기치 않은 오류가 발생했습니다. 진단 정보가 로컬 로그에 기록되었습니다."
   ,"ShortcutCaptureHintV2":"버튼을 누른 뒤 원하는 단일 키 또는 키 조합을 입력하세요. Delete 키로 해제할 수 있습니다.","ShortcutInvalidV2":"사용할 수 없는 키입니다. 다른 단일 키 또는 키 조합을 입력하세요."
 ,"ArchivePassword":"압축 파일 암호","PasswordPrompt":"압축 파일의 암호를 입력하세요. 이미 입력했다면 암호를 확인하고 다시 시도하세요.","OptionalPassword":"암호 (선택)","RarCreationHint":"RAR 압축은 설치된 WinRAR를 사용합니다. 압축 풀기는 WinRAR 없이 가능합니다.","RarToolRequired":"RAR 압축에는 WinRAR 설치가 필요합니다. 또는 Z_COMPRESSION_RAR_PATH에 rar.exe 경로를 지정하세요."
-,"ShellExtractNow":"z_compression으로 폴더에 풀기(&U)","ShellCompressNow":"z_compression으로 바로 압축(&Z)"
+,"ShellExtractNow":"z_compression으로 폴더에 풀기","ShellCompressNow":"z_compression으로 바로 압축"
+,"ExplorerShortcutHint":"문자·숫자 키는 탐색기 메뉴에도 즉시 반영됩니다. Ctrl/Alt/Shift 조합은 메뉴에서 마지막 문자 키로 사용합니다. 기능·기호 키는 앱 안에서만 동작합니다. Delete로 해제하면 메뉴 키도 해제됩니다.","ShortcutSyncFailed":"단축키 저장 또는 탐색기 메뉴 갱신에 실패했습니다. 권한을 확인하고 다시 시도하세요."
 }

@@ -6,5 +6,6 @@
   "CurrentFile":"目前檔案","ProgressItems":"處理進度","ProcessedSize":"已處理大小","Speed":"處理速度","Elapsed":"經過時間","Remaining":"剩餘時間","BackgroundContinue":"關閉此視窗後，操作仍會在背景繼續。","Background":"背景執行","Stop":"停止","SelectExtractionDestination":"選擇解壓縮位置","ExtractAction":"正在解壓縮","CompressAction":"正在壓縮","ExecutableWarning":"壓縮檔中的可執行檔可能會危害電腦。請只開啟您信任的檔案。\n\n是否繼續？","ExecutableWarningTitle":"可執行檔警告","Archives":"壓縮檔","AllFiles":"所有檔案","DefaultAppsError":"無法開啟預設應用程式設定。","OpenArchiveError":"無法開啟壓縮檔。","UnexpectedErrorLog":"z_compression 發生未預期的錯誤。診斷資訊已寫入本機記錄。"
   ,"ShortcutCaptureHintV2":"選取按鈕後按下想要的單鍵或組合鍵。按 Delete 可清除。","ShortcutInvalidV2":"無法使用此按鍵。請輸入其他單鍵或組合鍵。"
 ,"ArchivePassword":"壓縮檔密碼","PasswordPrompt":"請輸入壓縮檔密碼。如果已輸入，請檢查密碼後重試。","OptionalPassword":"密碼（選填）","RarCreationHint":"建立 RAR 使用已安裝的 WinRAR。解壓縮不需要 WinRAR。","RarToolRequired":"建立 RAR 需要安裝 WinRAR，或透過 Z_COMPRESSION_RAR_PATH 指定 rar.exe。"
-,"ShellExtractNow":"使用 z_compression 解壓縮至資料夾(&U)","ShellCompressNow":"使用 z_compression 立即壓縮(&Z)"
+,"ShellExtractNow":"使用 z_compression 解壓縮至資料夾","ShellCompressNow":"使用 z_compression 立即壓縮"
+,"ExplorerShortcutHint":"字母和數字會立即同步至檔案總管選單。Ctrl/Alt/Shift 組合在選單中使用最後的字元鍵。功能鍵和符號鍵僅在應用程式內有效。Delete 同時清除選單快速鍵。","ShortcutSyncFailed":"無法儲存快速鍵或更新選單，請檢查權限後重試。"
 }

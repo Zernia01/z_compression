@@ -18,11 +18,11 @@ Windows 11을 위한 현대적인 무료 압축·압축 해제 프로그램입�
 - Zip Slip 경로 탈출 방지와 압축 폭탄 완화용 크기·항목 수 제한
 - Windows 기본 앱 등록 및 파일·폴더 우클릭 압축 메뉴
 
-### 탐색기 메뉴에서 바로 압축·풀기 (1.1.0)
+### 탐색기 메뉴에서 바로 압축·풀기 (1.1.1)
 
-파일 또는 폴더를 선택하고 우클릭 메뉴를 연 다음 `Z`를 누르면 옵션 창 없이 원본 옆에 압축 파일을 만듭니다. 기본값은 ZIP·높은 압축입니다. 압축 파일에서는 `U`를 누르면 원본 옆의 파일 이름 폴더에 바로 풉니다. 같은 이름이 있으면 `(2)`, `(3)`을 붙이며 기존 파일과 폴더를 덮어쓰지 않습니다. 작업 중에는 진행 창에서 취소할 수 있고 암호화 파일은 암호를 묻습니다.
+`설정 > 단축키`를 변경하면 바로 저장되고 탐색기 우클릭 메뉴의 키도 즉시 갱신됩니다. 예를 들어 압축하기를 `U`로 지정하면 메뉴에서 `U`를 눌러 옵션 창 없이 원본 옆에 압축 파일을 만듭니다. 기본값은 ZIP·높은 압축입니다. 압축 풀기는 지정한 메뉴 키로 원본 옆의 파일 이름 폴더에 바로 풉니다. 같은 이름이 있으면 `(2)`, `(3)`을 붙이며 기존 파일과 폴더를 덮어쓰지 않습니다. 작업 중에는 진행 창에서 취소할 수 있고 암호화 파일은 암호를 묻습니다. Delete로 단축키를 해제하면 메뉴의 키도 해제되지만 메뉴 클릭은 계속 사용할 수 있습니다.
 
-Windows 11에서는 `추가 옵션 표시` 메뉴에서 사용하세요. `Shift+F10`으로 이 메뉴를 바로 열 수도 있습니다. 메뉴에 다른 프로그램의 같은 문자 키가 있으면 Windows가 항목을 순환 선택하므로 원하는 항목에서 Enter를 누르세요. 앱 내부의 설정 가능한 단축키와 탐색기 메뉴 키는 별개입니다.
+Windows 11에서는 `추가 옵션 표시` 메뉴에서 사용하세요. `Shift+F10`으로 이 메뉴를 바로 열 수도 있습니다. 탐색기 기본 메뉴는 문자·숫자 접근 키만 지원하므로 `Ctrl+E`는 앱 안에서 Ctrl+E, 메뉴에서는 E로 사용합니다. F키·기호 키는 앱 안에서만 동작합니다. 앱이 제공하는 두 메뉴의 접근 키가 겹치는 설정은 허용하지 않습니다. 다른 프로그램의 메뉴에 같은 키가 있으면 Windows가 항목을 순환 선택하므로 원하는 항목에서 Enter를 누르세요.
 
 RAR/RAR5 열기·검사·압축 풀기·개별 파일 열기는 WinRAR 설치 없이 지원합니다. 솔리드·분할·암호화 RAR도 지원하며, 분할 파일은 모든 조각을 같은 폴더에 두고 첫 번째 파일을 여세요. 암호화 파일은 필요한 시점에 암호 입력 창이 표시됩니다.
 
@@ -73,11 +73,11 @@ z_compression is a modern, free archive manager for Windows 11. All files are pr
 - Zip Slip protection and limits that reduce archive-bomb risk.
 - Windows Default Apps registration and an Explorer right-click compression command.
 
-### Quick Explorer menu actions (1.1.0)
+### Quick Explorer menu actions (1.1.1)
 
-Select a file or folder, open its context menu, and press `Z` to create an archive beside the source without an options dialog (ZIP/high compression by default). For an archive, press `U` to extract into a sibling folder named after it. Existing files and folders are preserved by adding `(2)`, `(3)`, and so on. The progress window allows cancellation; encrypted archives prompt for a password.
+Changing a shortcut in Settings saves it and updates the Explorer menu immediately. For example, assigning `U` to compression lets you press U in the context menu to create an archive beside the source without an options dialog (ZIP/high compression by default). The extraction menu key extracts into a sibling folder named after the archive. Existing files and folders are preserved by adding `(2)`, `(3)`, and so on. The progress window allows cancellation; encrypted archives prompt for a password. Clearing a shortcut with Delete removes its menu key while preserving the clickable command.
 
-On Windows 11 use Show more options, or open the classic menu directly with `Shift+F10`. If another menu entry uses the same letter, Windows cycles through matching entries; press Enter on the desired entry. These menu keys are separate from configurable shortcuts inside the app.
+On Windows 11 use Show more options, or open the classic menu directly with `Shift+F10`. Static Explorer menus support letter/digit mnemonics: Ctrl+E remains Ctrl+E inside the app and uses E in the menu. Function and punctuation keys apply inside the app only. Settings prevent the app's two menu keys from conflicting. If another application's menu uses the same letter, Windows cycles through matching entries; press Enter on the desired entry.
 
 Opening, testing, extracting, and previewing RAR/RAR5 archives works without WinRAR, including solid, multipart, and encrypted archives. Keep all volumes together and open the first volume. The app prompts for passwords when needed.
 

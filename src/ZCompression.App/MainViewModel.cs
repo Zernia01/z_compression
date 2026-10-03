@@ -13,6 +13,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private readonly IArchiveEngine _engine;
     private readonly ILocalizationService _localization;
     private readonly ISettingsService _settingsService;
+    private readonly SemaphoreSlim _settingsSaveLock = new(1, 1);
     private CancellationTokenSource? _cancellation;
     private string _searchText = "";
     private string _status = "";
@@ -216,7 +217,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
         CompressShortcut = compressShortcut,
         ExtractShortcut = extractShortcut,
     };
-    public Task SaveSettingsAsync() => _settingsService.SaveAsync(Settings);
+    public async Task SaveSettingsAsync()
+    {
+        await _settingsSaveLock.WaitAsync();
+        try { await _settingsService.SaveAsync(Settings); }
+        finally { _settingsSaveLock.Release(); }
+    }
 
     public string FriendlyError(Exception exception) => exception switch
     {

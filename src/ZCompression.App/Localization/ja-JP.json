@@ -6,5 +6,6 @@
   "CurrentFile":"現在のファイル","ProgressItems":"進行状況","ProcessedSize":"処理済み","Speed":"処理速度","Elapsed":"経過時間","Remaining":"残り時間","BackgroundContinue":"このウィンドウを閉じても処理はバックグラウンドで続行されます。","Background":"バックグラウンド","Stop":"停止","SelectExtractionDestination":"展開先を選択","ExtractAction":"展開中","CompressAction":"圧縮中","ExecutableWarning":"アーカイブ内の実行可能ファイルは危険な場合があります。信頼できるファイルのみ開いてください。\n\n続行しますか？","ExecutableWarningTitle":"実行可能ファイルの警告","Archives":"アーカイブ","AllFiles":"すべてのファイル","DefaultAppsError":"既定のアプリ設定を開けませんでした。","OpenArchiveError":"アーカイブを開けませんでした。","UnexpectedErrorLog":"予期しないエラーが発生しました。診断情報をローカルログに記録しました。"
   ,"ShortcutCaptureHintV2":"ボタンを選択して、単一キーまたは希望のキーの組み合わせを押してください。Deleteキーで解除できます。","ShortcutInvalidV2":"そのキーは使用できません。別の単一キーまたはキーの組み合わせを入力してください。"
 ,"ArchivePassword":"アーカイブのパスワード","PasswordPrompt":"アーカイブのパスワードを入力してください。入力済みの場合は確認して再試行してください。","OptionalPassword":"パスワード（任意）","RarCreationHint":"RARの作成にはインストール済みのWinRARを使用します。展開にWinRARは不要です。","RarToolRequired":"RARの作成にはWinRARのインストールが必要です。Z_COMPRESSION_RAR_PATHでrar.exeを指定することもできます。"
-,"ShellExtractNow":"z_compressionでフォルダーに展開(&U)","ShellCompressNow":"z_compressionで今すぐ圧縮(&Z)"
+,"ShellExtractNow":"z_compressionでフォルダーに展開","ShellCompressNow":"z_compressionで今すぐ圧縮"
+,"ExplorerShortcutHint":"英字・数字キーはエクスプローラーのメニューにも即時反映されます。Ctrl/Alt/Shiftとの組み合わせはメニューでは最後の文字キーを使用します。機能・記号キーはアプリ内のみ対応します。Deleteで両方を解除します。","ShortcutSyncFailed":"ショートカットの保存またはメニューの更新に失敗しました。権限を確認して再試行してください。"
 }

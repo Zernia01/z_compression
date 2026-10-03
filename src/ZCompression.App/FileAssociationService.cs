@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
+using ZCompression.Core.Settings;
 
 namespace ZCompression.App;
 
@@ -14,7 +15,7 @@ internal static class FileAssociationService
     internal static readonly string[] SupportedExtensions =
         [".zip", ".7z", ".rar", ".tar", ".gz", ".tgz", ".bz2", ".xz", ".zst"];
 
-    internal static void RegisterCurrentUser(string executablePath)
+    internal static void RegisterCurrentUser(string executablePath, AppSettings settings)
     {
         var executable = Path.GetFullPath(executablePath);
         var openCommand = $"\"{executable}\" \"%1\"";
@@ -43,19 +44,19 @@ internal static class FileAssociationService
         using (var registeredApplications = Registry.CurrentUser.CreateSubKey(@"Software\RegisteredApplications"))
             registeredApplications.SetValue(RegisteredApplicationName, CapabilitiesPath, RegistryValueKind.String);
 
-        RegisterContextMenus(executable);
+        RegisterContextMenus(executable, settings);
 
         SHChangeNotify(0x08000000, 0, IntPtr.Zero, IntPtr.Zero);
     }
 
-    internal static void RegisterContextMenus(string executablePath)
+    internal static void RegisterContextMenus(string executablePath, AppSettings settings)
     {
         var executable = Path.GetFullPath(executablePath);
         foreach (var itemType in new[] { "*", "Directory" })
-            RegisterMenu($@"Software\Classes\{itemType}\shell\ZCompression.Compress", LocalizationManager.Instance["ShellCompressNow"], "--compress-here", executable);
+            RegisterMenu($@"Software\Classes\{itemType}\shell\ZCompression.Compress", ExplorerMenuShortcut.BuildLabel(LocalizationManager.Instance["ShellCompressNow"], settings.CompressShortcut), "--compress-here", executable);
         // SystemFileAssociations keeps extraction available when another app is the default.
         foreach (var extension in SupportedExtensions)
-            RegisterMenu($@"Software\Classes\SystemFileAssociations\{extension}\shell\ZCompression.Extract", LocalizationManager.Instance["ShellExtractNow"], "--extract-here", executable);
+            RegisterMenu($@"Software\Classes\SystemFileAssociations\{extension}\shell\ZCompression.Extract", ExplorerMenuShortcut.BuildLabel(LocalizationManager.Instance["ShellExtractNow"], settings.ExtractShortcut), "--extract-here", executable);
         SHChangeNotify(0x08000000, 0, IntPtr.Zero, IntPtr.Zero);
     }
 

@@ -192,6 +192,13 @@ public partial class MainWindow : Window
         try { new SettingsWindow(_viewModel) { Owner = this }.ShowDialog(); }
         finally { Effect = previousEffect; Opacity = previousOpacity; }
         await _viewModel.SaveSettingsAsync();
+        try
+        {
+            if (Environment.ProcessPath is { } executable) FileAssociationService.RegisterContextMenus(executable, _viewModel.Settings);
+        }
+        catch (UnauthorizedAccessException) { }
+        catch (System.Security.SecurityException) { }
+        catch (IOException) { }
         App.ApplyProcessPriority(_viewModel.Settings.OperationPriority);
     }
 

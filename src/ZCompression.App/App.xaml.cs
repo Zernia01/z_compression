@@ -23,11 +23,16 @@ public partial class App : Application
         LocalizationManager.Instance.Initialize(localization);
         try
         {
-            if (Environment.ProcessPath is { } executable) FileAssociationService.RegisterContextMenus(executable);
+            if (Environment.ProcessPath is { } executable) FileAssociationService.RegisterContextMenus(executable, settings);
         }
         catch (UnauthorizedAccessException) { }
         catch (System.Security.SecurityException) { }
         catch (IOException) { }
+        if (e.Args.FirstOrDefault()?.Equals("--register-shell", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            Shutdown();
+            return;
+        }
         var viewModel = new MainViewModel(new SharpCompressArchiveEngine(), localization, settingsService, settings);
         var command = e.Args.FirstOrDefault();
         if (command?.Equals("--compress-here", StringComparison.OrdinalIgnoreCase) == true ||
