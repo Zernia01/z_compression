@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
+    <Compile Include="..\..\src\ZCompression.App\ShellRegistrationBatch.cs" Link="ShellRegistrationBatch.cs" />
     <None Update="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

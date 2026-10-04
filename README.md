@@ -108,6 +108,14 @@ Licensed under the [MIT License](LICENSE). Third-party notices are in [THIRD_PAR
 
 ZIP은 파란색, RAR은 보라색, 7Z는 회색의 전용 아이콘을 사용합니다. 설치 파일과 포터블 배포에 아이콘이 포함되며 앱 실행 시 파일 형식 등록을 갱신합니다. 이전 공통 아이콘이 계속 표시되면 설정의 기본 앱 선택에서 ZIP·RAR·7Z를 z_compression에 다시 연결하세요.
 
+### 탐색기 새로고침 수정 (1.1.3)
+
+실행할 때 파일 연결과 메뉴의 현재 값을 확인하고, 변경된 값만 기록합니다. 등록 내용이 같으면 탐색기에 갱신 알림을 보내지 않습니다. 최초 등록, 설치 경로 변경, 메뉴 단축키 변경 등 실제 변경이 있을 때만 알림을 한 번 보냅니다.
+
 ### Archive format icons (1.1.2)
 
 ZIP uses the blue icon, RAR the purple icon, and 7Z the gray icon. Both installed and portable packages include the icons and refresh registration on startup. If the old shared icon remains, use the default-app action in Settings to associate each format with z_compression again.
+
+### Explorer refresh fix (1.1.3)
+
+Startup compares existing file associations and menu values and writes only changes. Unchanged registration sends no Explorer refresh notification. First registration, installation path changes, and menu shortcut changes send a single notification after registration completes.
