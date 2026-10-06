@@ -148,7 +148,8 @@
             <Grid Grid.Row="1" Margin="18,0">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="{Binding BreadcrumbText}" FontSize="15" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding BreadcrumbText}" FontSize="15" FontWeight="SemiBold" Cursor="Hand" ToolTip="{local:Loc ArchiveTitleDragHint}"
+                               PreviewMouseLeftButtonDown="OnArchiveTitleDragStart" PreviewMouseMove="OnArchiveTitleDragMove" />
                     <TextBlock Text="{local:Loc FolderDoubleClickHint}" FontSize="10" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,2,0,0" />
                 </StackPanel>
                 <TextBlock Grid.Column="1" Text="{Binding BrowserItemCountText}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />

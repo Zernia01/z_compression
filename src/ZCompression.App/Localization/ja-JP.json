@@ -8,5 +8,5 @@
 ,"ArchivePassword":"アーカイブのパスワード","PasswordPrompt":"アーカイブのパスワードを入力してください。入力済みの場合は確認して再試行してください。","OptionalPassword":"パスワード（任意）","RarCreationHint":"RARの作成にはインストール済みのWinRARを使用します。展開にWinRARは不要です。","RarToolRequired":"RARの作成にはWinRARのインストールが必要です。Z_COMPRESSION_RAR_PATHでrar.exeを指定することもできます。"
 ,"ShellExtractNow":"z_compressionでフォルダーに展開","ShellCompressNow":"z_compressionで今すぐ圧縮"
 ,"ExplorerShortcutHint":"英字・数字キーはエクスプローラーのメニューにも即時反映されます。Ctrl/Alt/Shiftとの組み合わせはメニューでは最後の文字キーを使用します。機能・記号キーはアプリ内のみ対応します。Deleteで両方を解除します。","ShortcutSyncFailed":"ショートカットの保存またはメニューの更新に失敗しました。権限を確認して再試行してください。",
-  "DragExportReady":"準備が完了しました。もう一度保存先へドラッグしてください。"
+  "ArchiveTitleDragHint":"このタイトルを外へドラッグすると、同じ名前のフォルダーに全体を展開します。"
 }

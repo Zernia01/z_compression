@@ -43,6 +43,10 @@ public sealed class RarArchiveTests
                 var preview = Path.Combine(root, Guid.NewGuid() + ".preview");
                 await engine.ExtractEntryAsync(archive, entry.Path, preview, password);
                 CollectionAssert.AreEqual(await File.ReadAllBytesAsync(extracted), await File.ReadAllBytesAsync(preview), entry.Path);
+                using var direct = engine.OpenEntryReadStream(archive, entry.Path, password);
+                using var streamed = new MemoryStream();
+                await direct.CopyToAsync(streamed);
+                CollectionAssert.AreEqual(await File.ReadAllBytesAsync(extracted), streamed.ToArray(), entry.Path);
             }
         }
         finally { Directory.Delete(root, true); }

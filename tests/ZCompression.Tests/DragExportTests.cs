@@ -77,38 +77,71 @@ public sealed class DragExportTests
     }
 
     [TestMethod]
-    public async Task FileDeliveryWaitsForAsyncPreparation_AndRepeatDragReusesFiles()
+    public void ManifestIncludesImplicitAndEmptyDirectories_WithoutOpeningFiles()
     {
-        var root = Path.Combine(Path.GetTempPath(), "z-compression-drag-tests", Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(root);
-        try
-        {
-            var path = Path.Combine(root, "한글.txt");
-            var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            var calls = 0;
-            var export = new PreparedDragExport([path], async () => { calls++; await release.Task; await File.WriteAllTextAsync(path, "ready"); });
-            var preparation = export.PrepareAsync();
-            Assert.IsFalse(preparation.IsCompleted);
-            Assert.IsFalse(export.IsReady);
-            Assert.ThrowsExactly<InvalidOperationException>(() => export.GetReadyPaths());
-            release.SetResult();
-            await preparation.WaitAsync(TimeSpan.FromSeconds(5));
-            Assert.IsTrue(export.IsReady);
-            await export.PrepareAsync();
-            Assert.AreEqual(path, export.GetReadyPaths().Single());
-            Assert.AreEqual(1, calls);
-            File.Delete(path);
-            Assert.IsFalse(export.IsReady);
-        }
-        finally { Directory.Delete(root, true); }
+        ArchiveEntryInfo Entry(string path, bool folder = false) => new(path, path, folder ? 0 : 5, 1, null, null, folder);
+        var manifest = ArchiveExportManifest.Create([Entry("outer/folder/nested/a.txt"), Entry("outer/folder/empty/", true), Entry("outer/other.txt")], ["outer/folder"], "outer");
+        Assert.HasCount(4, manifest);
+        Assert.IsTrue(manifest.Any(entry => entry.Name == @"folder\empty" && entry.IsDirectory));
+        Assert.IsTrue(manifest.Any(entry => entry.Name == @"folder\nested\a.txt" && !entry.IsDirectory));
+        Assert.IsFalse(manifest.Any(entry => entry.Name.Contains("outer", StringComparison.Ordinal)));
     }
 
     [TestMethod]
-    public async Task CancellationDoesNotExposePartialFilePaths()
+    public void StreamMetadataAndSeekDoNotDecompress_ReadStartsIncrementally()
     {
-        var export = new PreparedDragExport(["unused"], () => Task.FromCanceled(new CancellationToken(true)));
-        await Assert.ThrowsExactlyAsync<TaskCanceledException>(() => export.PrepareAsync());
-        Assert.IsFalse(export.IsReady);
-        Assert.ThrowsExactly<InvalidOperationException>(() => export.GetReadyPaths());
+        var opens = 0;
+        var bytes = Enumerable.Range(0, 200000).Select(value => (byte)value).ToArray();
+        using var stream = new ArchiveContentStream("large.bin", bytes.Length, () => { opens++; return new MemoryStream(bytes); }, error => throw new AssertFailedException(error.Message), _ => { });
+        stream.Stat(out var stat, 0);
+        stream.Seek(17, 0, IntPtr.Zero);
+        stream.Clone(out var clone);
+        Assert.AreEqual(0, opens);
+        Assert.AreEqual((long)bytes.Length, stat.cbSize);
+        var buffer = new byte[13];
+        stream.Read(buffer, buffer.Length, IntPtr.Zero);
+        CollectionAssert.AreEqual(bytes.Skip(17).Take(13).ToArray(), buffer);
+        Assert.AreEqual(1, opens);
+        clone.Read(buffer, buffer.Length, IntPtr.Zero);
+        CollectionAssert.AreEqual(bytes.Skip(17).Take(13).ToArray(), buffer);
+        ((IDisposable)clone).Dispose();
+        stream.Seek(0, 0, IntPtr.Zero);
+        stream.Read(buffer, buffer.Length, IntPtr.Zero);
+        CollectionAssert.AreEqual(bytes.Take(13).ToArray(), buffer);
+    }
+
+    [TestMethod]
+    public void ArchiveTitleExportIncludesAllEntriesUnderArchiveNamedFolder()
+    {
+        var entry = new ArchiveEntryInfo("nested/file.txt", "nested/file.txt", 3, 2, null, null, false);
+        var manifest = ArchiveExportManifest.CreateWholeArchive([entry], "Codex.zip");
+        Assert.AreEqual("Codex", manifest[0].Name);
+        Assert.IsTrue(manifest[0].IsDirectory);
+        Assert.IsTrue(manifest.Any(item => item.Name == @"Codex\nested\file.txt" && item.ArchivePath == "nested/file.txt"));
+        var empty = ArchiveExportManifest.CreateWholeArchive([], "empty.tar.gz");
+        Assert.HasCount(1, empty);
+        Assert.AreEqual("empty", empty[0].Name);
+    }
+
+    [TestMethod]
+    [DataRow(ArchiveFormat.Zip, ".zip")]
+    [DataRow(ArchiveFormat.SevenZip, ".7z")]
+    public async Task DirectArchiveStreamReturnsContent_WithoutExtractedFiles(ArchiveFormat format, string extension)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "z-compression-stream-tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var source = Path.Combine(root, "한글.txt");
+            await File.WriteAllTextAsync(source, "streamed archive content");
+            var archive = Path.Combine(root, "source" + extension);
+            var engine = new SharpCompressArchiveEngine();
+            await engine.CompressAsync(new CompressionRequest([source], archive, format));
+            using (var input = engine.OpenEntryReadStream(archive, "한글.txt"))
+            using (var reader = new StreamReader(input)) Assert.AreEqual("streamed archive content", await reader.ReadToEndAsync());
+            Assert.HasCount(2, Directory.GetFiles(root, "*", SearchOption.AllDirectories));
+            using var reopened = File.Open(archive, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+        }
+        finally { Directory.Delete(root, true); }
     }
 }

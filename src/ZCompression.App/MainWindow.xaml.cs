@@ -7,7 +7,7 @@ using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Controls;
-using ZCompression.Core.Security;
+using ZCompression.Core.Archives;
 
 namespace ZCompression.App;
 
@@ -18,8 +18,8 @@ public partial class MainWindow : Window
     private bool _detailsVisible = true;
     private bool _detailsAnimating;
     private Point? _archiveDragOrigin;
+    private Point? _archiveTitleDragOrigin;
     private bool _exportingDrag;
-    private (string Key, PreparedDragExport Export)? _preparedDragExport;
     private const string ArchiveDragFormat = "ZCompression.ArchiveSelection";
     public MainWindow(MainViewModel viewModel)
     {
@@ -150,50 +150,47 @@ public partial class MainWindow : Window
         var items = ArchiveGrid.SelectedItems.Cast<ArchiveBrowserItem>().Where(item => !item.IsParent).ToArray();
         if (items.Length == 0) return;
         e.Handled = true;
+        await ExportArchiveSelectionAsync(() => ArchiveExportManifest.Create(_viewModel.Entries.ToArray(), items.Select(item => item.Path).ToArray(), _viewModel.CurrentFolder));
+    }
+
+    private void OnArchiveTitleDragStart(object sender, MouseButtonEventArgs e)
+    {
+        _archiveTitleDragOrigin = !_viewModel.IsBusy && !_exportingDrag && _viewModel.HasArchive && e.ClickCount == 1
+            ? e.GetPosition((IInputElement)sender) : null;
+    }
+
+    private async void OnArchiveTitleDragMove(object sender, MouseEventArgs e)
+    {
+        if (_archiveTitleDragOrigin is not { } origin || e.LeftButton != MouseButtonState.Pressed || _exportingDrag || _viewModel.IsBusy) return;
+        var position = e.GetPosition((IInputElement)sender);
+        if (Math.Abs(position.X - origin.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(position.Y - origin.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+        _archiveTitleDragOrigin = null;
+        e.Handled = true;
+        await ExportArchiveSelectionAsync(() => ArchiveExportManifest.CreateWholeArchive(_viewModel.Entries.ToArray(), _viewModel.CurrentArchivePath));
+    }
+
+    private async Task ExportArchiveSelectionAsync(Func<IReadOnlyList<ArchiveExportEntry>> createManifest)
+    {
         _exportingDrag = true;
-        var exportRoot = Path.Combine(Path.GetTempPath(), "z_compression", "drag");
-        var staging = SafeExtractionPath.Resolve(exportRoot, Guid.NewGuid().ToString("N"));
-        var prepared = false;
+        VirtualArchiveTransfer? transfer = null;
         try
         {
-            // FileDrop lets Explorer choose the destination and handle name conflicts.
-            var paths = items.Select(item => SafeExtractionPath.Resolve(staging, item.Name)).ToArray();
-            var archive = new FileInfo(_viewModel.CurrentArchivePath);
-            var key = System.Text.Json.JsonSerializer.Serialize(new { archive.FullName, archive.Length, archive.LastWriteTimeUtc, Folder = _viewModel.CurrentFolder, Paths = items.Select(item => item.Path).Order().ToArray() });
-            PreparedDragExport export;
-            if (_preparedDragExport is { } cached && cached.Key == key && cached.Export.IsReady)
-                export = cached.Export;
-            else
-            {
-                export = new PreparedDragExport(paths, () => _viewModel.PrepareDragExportAsync(items, staging));
-                var progress = new OperationProgressWindow(_viewModel, LocalizationManager.Instance["ExtractAction"], string.Join(", ", items.Select(item => item.Name)), true) { Owner = this, ShowActivated = false };
-                progress.Show();
-                try { await export.PrepareAsync(); }
-                finally { progress.Finish(); }
-                _preparedDragExport = (key, export);
-            }
-            prepared = true;
-            // Releasing the mouse during preparation leaves a ready export for the next drag.
-            if (Mouse.LeftButton != MouseButtonState.Pressed)
-            {
-                _viewModel.ShowDragExportReady();
-                return;
-            }
-            var data = new DataObject(DataFormats.FileDrop, export.GetReadyPaths());
-            data.SetData(ArchiveDragFormat, true);
-            DragDrop.DoDragDrop(ArchiveGrid, data, DragDropEffects.Copy);
+            var manifest = createManifest();
+            var password = _viewModel.GetDragExportPassword(manifest.Any(entry => entry.IsEncrypted));
+            transfer = await VirtualArchiveTransfer.CreateAsync(manifest, _viewModel.CurrentArchivePath, password);
+            var tracking = _viewModel.TrackDragTransferAsync(transfer.Completion, transfer.Cancel);
+            uint effects = 0;
+            try { effects = transfer.Drag(); }
+            finally { transfer.FinishDrag(effects); }
+            await tracking;
         }
         catch (OperationCanceledException) { }
-        catch (Exception exception) { MessageBox.Show(this, _viewModel.FriendlyError(exception), "z_compression", MessageBoxButton.OK, MessageBoxImage.Error); }
-        finally
+        catch (Exception exception)
         {
-            _exportingDrag = false;
-            // Retain prepared files for repeat drags and asynchronous Explorer copies.
-            if (!prepared)
-                try { if (Directory.Exists(staging)) Directory.Delete(staging, true); }
-                catch (IOException) { }
-                catch (UnauthorizedAccessException) { }
+            _viewModel.ForgetDragExportPassword();
+            MessageBox.Show(this, _viewModel.FriendlyError(exception), "z_compression", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+        finally { transfer?.FinishDrag(0); _exportingDrag = false; }
     }
 
     private static DataGridRow? FindArchiveRow(DependencyObject? element)

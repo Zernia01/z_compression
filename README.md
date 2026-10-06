@@ -135,3 +135,15 @@ Select files or folders inside an archive and drag them to the desktop or an Exp
 ### Drag freeze fix (1.1.5)
 
 Selected entries are prepared asynchronously before starting Windows drag-and-drop. File data requests perform no extraction or UI dispatch. If you release the mouse while preparation is running, wait for the ready message and drag the same selection again; completed files are reused.
+
+### 놓으면서 압축 풀기 (1.1.6)
+
+미리 풀거나 임시 파일을 준비하지 않고 Windows 가상 파일(FileGroupDescriptorW / FileContents)로 전달합니다. 드래그 중에는 파일 정보만 제공하며, 놓은 뒤 탐색기가 내용을 읽으면 압축 파일에서 스트리밍으로 풀어 목적지에 기록합니다. 여러 파일·폴더, 한글 이름, 빈 폴더를 지원합니다. 파일 전달은 UI와 분리되고 비동기 전송을 지원하며, 진행·동일 이름 처리·취소는 탐색기의 복사 창에서 수행합니다. 암호가 필요한 항목은 드래그 전 암호를 입력합니다. 원본 압축 파일은 유지됩니다. 가상 파일을 받지 못하는 프로그램에는 끌어놓을 수 없습니다.
+
+### Extract while dropping (1.1.6)
+
+Archive selections are offered as Windows virtual files (FileGroupDescriptorW / FileContents), with no pre-extraction or expanded temporary files. Dragging exposes metadata only; when Explorer reads dropped contents, entry streams decompress directly into its destination copy. File transfer is isolated from the UI and supports asynchronous operation. Explorer manages progress, name conflicts, and cancellation. Files, folders, Unicode names, and empty folders are supported. Encrypted selections prompt for a password before dragging; the original archive remains unchanged. Targets must support virtual file streams.
+
+압축 파일의 큰 제목도 끌어낼 수 있습니다. 제목을 끌면 현재 하위 폴더나 검색 결과와 관계없이 전체 내용을 압축 파일 이름의 폴더로 전달합니다(예: Codex.zip → Codex 폴더).
+
+Dragging the large archive title exports the complete archive into a folder named after it (Codex.zip → Codex), regardless of the current subfolder or search.

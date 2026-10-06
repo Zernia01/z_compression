@@ -22,7 +22,9 @@ public sealed record ArchiveEntryInfo(
     long CompressedSize,
     DateTime? Modified,
     string? Checksum,
-    bool IsDirectory)
+    bool IsDirectory,
+    bool IsEncrypted = false,
+    bool IsLink = false)
 {
     public double CompressionRatio => OriginalSize == 0 ? 0 : 1d - (double)CompressedSize / OriginalSize;
 }

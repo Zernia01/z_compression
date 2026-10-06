@@ -8,5 +8,5 @@
 ,"ArchivePassword":"壓縮 파일 暗號","PasswordPrompt":"壓縮 파일의 暗號를 입력하세요. 이미 입력했다면 暗號를 확인하고 다시 시도하세요.","OptionalPassword":"暗號 (선택)","RarCreationHint":"RAR 壓縮은 설치된 WinRAR를 사용합니다. 壓縮 解制는 WinRAR 없이 가능합니다.","RarToolRequired":"RAR 壓縮에는 WinRAR 설치가 필요합니다. 또는 Z_COMPRESSION_RAR_PATH에 rar.exe 경로를 지정하세요."
 ,"ShellExtractNow":"z_compression으로 폴더에 풀기","ShellCompressNow":"z_compression으로 바로 壓縮"
 ,"ExplorerShortcutHint":"文字·數字 키는 탐색기 메뉴에도 즉시 反映됩니다. Ctrl/Alt/Shift 組合은 메뉴에서 마지막 文字 키로 使用합니다. 기능·기호 키는 앱 안에서만 動作합니다. Delete로 解除하면 메뉴 키도 解除됩니다.","ShortcutSyncFailed":"短縮키 저장 또는 탐색기 메뉴 更新에 실패했습니다. 權限을 확인하고 다시 시도하세요.",
-  "DragExportReady":"꺼낼 파일 준비 완료. 다시 끌어 원하는 위치에 놓으세요."
+  "ArchiveTitleDragHint":"제목을 밖으로 끌면 압축 파일 전체를 이름의 폴더에 풉니다."
 }

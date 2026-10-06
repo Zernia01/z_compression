@@ -14,7 +14,7 @@
   <ItemGroup>
     <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
     <Compile Include="..\..\src\ZCompression.App\ShellRegistrationBatch.cs" Link="ShellRegistrationBatch.cs" />
-    <Compile Include="..\..\src\ZCompression.App\PreparedDragExport.cs" Link="PreparedDragExport.cs" />
+    <Compile Include="..\..\src\ZCompression.App\ArchiveContentStream.cs" Link="ArchiveContentStream.cs" />
     <None Update="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

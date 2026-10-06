@@ -24,6 +24,8 @@ jobs:
       - run: dotnet restore z_compression.slnx --configfile NuGet.Config
       - run: dotnet build z_compression.slnx -c Release --no-restore
       - run: dotnet test tests/ZCompression.Tests/ZCompression.Tests.csproj -c Release --no-build
+      - name: Verify native asynchronous archive drag streams
+        run: dotnet run --project tools/VirtualDragSmoke -c Release
       - run: dotnet publish src/ZCompression.App/ZCompression.App.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -o artifacts/${{ matrix.rid }}
       - run: dotnet publish src/ZCompression.Updater/ZCompression.Updater.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -o artifacts/updater-${{ matrix.rid }}
       - shell: pwsh

@@ -90,6 +90,44 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             throw new FileNotFoundException("The selected archive entry was not found.", entryPath);
         }, cancellationToken);
 
+    public Stream OpenEntryReadStream(string archivePath, string entryPath, string? password = null, CancellationToken cancellationToken = default)
+    {
+        var normalized = entryPath.Replace('\\', '/').TrimEnd('/');
+        var iterator = ReadEntries(archivePath, password, null).GetEnumerator();
+        try
+        {
+            while (iterator.MoveNext())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var (entry, openStream) = iterator.Current;
+                if (entry.IsDirectory || !string.Equals((entry.Key ?? "").Replace('\\', '/').TrimEnd('/'), normalized, StringComparison.Ordinal)) continue;
+                RejectLink(entry);
+                return new OwnedEntryStream(openStream(), iterator, cancellationToken);
+            }
+            throw new FileNotFoundException("The selected archive entry was not found.", entryPath);
+        }
+        catch { iterator.Dispose(); throw; }
+    }
+
+    private sealed class OwnedEntryStream(Stream stream, IDisposable owner, CancellationToken token) : Stream
+    {
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override int Read(byte[] buffer, int offset, int count) { token.ThrowIfCancellationRequested(); return stream.Read(buffer, offset, count); }
+        public override void Flush() { }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) { try { stream.Dispose(); } finally { owner.Dispose(); } }
+            base.Dispose(disposing);
+        }
+    }
+
     public Task<IReadOnlyList<ArchiveEntryInfo>> ListAsync(string archivePath, string? password = null, System.Text.Encoding? legacyEncoding = null, CancellationToken cancellationToken = default) =>
         Task.Run<IReadOnlyList<ArchiveEntryInfo>>(() =>
         {
@@ -109,7 +147,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     var entry = item.Entry;
-                    return new ArchiveEntryInfo(entry.Key ?? string.Empty, entry.Key ?? string.Empty, entry.Size, entry.CompressedSize, entry.LastModifiedTime, GetChecksum(entry), entry.IsDirectory);
+                    return new ArchiveEntryInfo(entry.Key ?? string.Empty, entry.Key ?? string.Empty, entry.Size, entry.CompressedSize, entry.LastModifiedTime, GetChecksum(entry), entry.IsDirectory, entry.IsEncrypted, entry.LinkTarget is not null || entry is RarEntry { IsRedir: true });
                 })
                 .ToArray();
             if (cacheable)

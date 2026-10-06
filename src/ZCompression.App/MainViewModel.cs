@@ -201,20 +201,25 @@ public sealed class MainViewModel : INotifyPropertyChanged
         return destination;
     }
 
-    public async Task PrepareDragExportAsync(IReadOnlyList<ArchiveBrowserItem> items, string destination) => await WithOperation(async token =>
+    public string? GetDragExportPassword(bool encrypted)
     {
-        if (!HasArchive || items.Count == 0 || items.Any(item => item.IsParent))
-            throw new InvalidOperationException("Select files or folders inside an open archive.");
+        if (_archivePasswords.TryGetValue(CurrentArchivePath, out var password)) return password;
+        if (!encrypted) return null;
+        password = RequestArchivePassword?.Invoke(CurrentArchivePath);
+        if (password is null) throw new OperationCanceledException();
+        _archivePasswords[CurrentArchivePath] = password;
+        return password;
+    }
+
+    public void ForgetDragExportPassword() => _archivePasswords.Remove(CurrentArchivePath);
+
+    public async Task TrackDragTransferAsync(Task completion, Action cancel) => await WithOperation(async token =>
+    {
+        using var registration = token.Register(cancel);
         Status = _localization["Extracting"];
-        var archive = CurrentArchivePath;
-        var paths = items.Select(item => item.Path).ToArray();
-        var folder = CurrentFolder;
-        await WithArchivePassword(archive, password => _engine.ExtractAsync(
-            new ExtractionRequest(archive, destination, password, SelectedPaths: paths, RelativeRoot: folder), CreateProgress(), token));
+        await completion;
         Status = _localization["ExtractionComplete"];
     });
-
-    public void ShowDragExportReady() => Status = _localization["DragExportReady"];
 
     public static bool IsPotentiallyExecutable(string name)
     {
