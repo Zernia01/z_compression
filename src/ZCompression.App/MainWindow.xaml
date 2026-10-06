@@ -153,7 +153,8 @@
                 </StackPanel>
                 <TextBlock Grid.Column="1" Text="{Binding BrowserItemCountText}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
             </Grid>
-            <DataGrid Grid.Row="2" Margin="0" ItemsSource="{Binding BrowserItems}" SelectedItem="{Binding SelectedBrowserItem, Mode=TwoWay}" MouseDoubleClick="OnArchiveItemDoubleClick"
+            <DataGrid x:Name="ArchiveGrid" Grid.Row="2" Margin="0" ItemsSource="{Binding BrowserItems}" SelectedItem="{Binding SelectedBrowserItem, Mode=TwoWay}" MouseDoubleClick="OnArchiveItemDoubleClick"
+                      SelectionMode="Extended" SelectionUnit="FullRow" PreviewMouseLeftButtonDown="OnArchiveDragStart" PreviewMouseMove="OnArchiveDragMove"
                       AutoGenerateColumns="False" IsReadOnly="True" CanUserSortColumns="True" HeadersVisibility="Column"
                       Background="{DynamicResource CardBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,1"
                       GridLinesVisibility="All" HorizontalGridLinesBrush="{DynamicResource BorderBrush}" VerticalGridLinesBrush="{DynamicResource BorderBrush}"

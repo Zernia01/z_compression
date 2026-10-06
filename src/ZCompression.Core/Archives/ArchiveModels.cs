@@ -58,6 +58,8 @@ public sealed record ExtractionRequest(
     string? Password = null,
     System.Text.Encoding? LegacyEncoding = null,
     long MaximumExpandedBytes = 100L * 1024 * 1024 * 1024,
-    int MaximumFileCount = 1_000_000);
+    int MaximumFileCount = 1_000_000,
+    IReadOnlyList<string>? SelectedPaths = null,
+    string RelativeRoot = "");
 
 public sealed record ArchiveCapabilities(bool CanRead, bool CanWrite, bool CanEncrypt, bool CanModify, string? Limitation = null);

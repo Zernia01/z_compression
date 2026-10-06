@@ -201,6 +201,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
         return destination;
     }
 
+    public async Task PrepareDragExportAsync(IReadOnlyList<ArchiveBrowserItem> items, string destination) => await WithOperation(async token =>
+    {
+        if (!HasArchive || items.Count == 0 || items.Any(item => item.IsParent))
+            throw new InvalidOperationException("Select files or folders inside an open archive.");
+        Status = _localization["Extracting"];
+        var archive = CurrentArchivePath;
+        var paths = items.Select(item => item.Path).ToArray();
+        var folder = CurrentFolder;
+        await WithArchivePassword(archive, password => _engine.ExtractAsync(
+            new ExtractionRequest(archive, destination, password, SelectedPaths: paths, RelativeRoot: folder), CreateProgress(), token));
+        Status = _localization["ExtractionComplete"];
+    });
+
     public static bool IsPotentiallyExecutable(string name)
     {
         var extension = Path.GetExtension(name);

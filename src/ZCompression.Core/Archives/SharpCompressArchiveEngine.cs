@@ -176,8 +176,10 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
 
     private static void ExtractCore(ExtractionRequest request, IProgress<ArchiveProgress>? progress, CancellationToken token)
     {
+        var selection = request.SelectedPaths is not null || request.RelativeRoot.Length > 0 ? new ArchiveExtractionSelection(request) : null;
         Directory.CreateDirectory(request.DestinationDirectory);
-        var entries = ReadEntries(request.ArchivePath, request.Password, request.LegacyEncoding, metadataOnly: true).Select(item =>
+        var entries = ReadEntries(request.ArchivePath, request.Password, request.LegacyEncoding, metadataOnly: true)
+            .Where(item => selection is null || selection.GetRelativePath(item.Entry.Key ?? "") is not null).Select(item =>
         {
             token.ThrowIfCancellationRequested();
             return new { item.Entry.IsDirectory, item.Entry.Size };
@@ -192,10 +194,12 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         foreach (var (entry, openStream) in ReadEntries(request.ArchivePath, request.Password, request.LegacyEncoding))
         {
             token.ThrowIfCancellationRequested();
-            RejectLink(entry);
             var key = entry.Key ?? throw new InvalidDataException("Archive entry has no name.");
+            var relative = selection is null ? key : selection.GetRelativePath(key);
+            if (relative is null) continue;
+            RejectLink(entry);
             Report(progress, key, completed, entries.Length, processed, total, watch.Elapsed);
-            var destination = SafeExtractionPath.Resolve(request.DestinationDirectory, key);
+            var destination = SafeExtractionPath.Resolve(request.DestinationDirectory, relative);
             SafeExtractionPath.EnsureNoReparsePointAncestors(request.DestinationDirectory, destination);
             if (entry.IsDirectory)
             {

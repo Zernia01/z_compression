@@ -118,17 +118,20 @@ public partial class App : Application
 
     private static void CleanupOldPreviews()
     {
-        var root = Path.Combine(Path.GetTempPath(), "z_compression", "preview");
-        if (!Directory.Exists(root)) return;
-        try
+        foreach (var category in new[] { "preview", "drag" })
         {
-            foreach (var directory in Directory.EnumerateDirectories(root))
+            var root = Path.Combine(Path.GetTempPath(), "z_compression", category);
+            if (!Directory.Exists(root)) continue;
+            try
             {
-                if (Directory.GetCreationTimeUtc(directory) < DateTime.UtcNow.AddDays(-2)) Directory.Delete(directory, true);
+                foreach (var directory in Directory.EnumerateDirectories(root))
+                {
+                    if (Directory.GetCreationTimeUtc(directory) < DateTime.UtcNow.AddDays(-2)) Directory.Delete(directory, true);
+                }
             }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
-        catch (IOException) { }
-        catch (UnauthorizedAccessException) { }
     }
 
     private static void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

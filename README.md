@@ -119,3 +119,11 @@ ZIP uses the blue icon, RAR the purple icon, and 7Z the gray icon. Both installe
 ### Explorer refresh fix (1.1.3)
 
 Startup compares existing file associations and menu values and writes only changes. Unchanged registration sends no Explorer refresh notification. First registration, installation path changes, and menu shortcut changes send a single notification after registration completes.
+
+### 밖으로 끌어서 압축 풀기 (1.1.4)
+
+압축 파일 안에서 파일·폴더를 선택한 뒤 바탕화면이나 탐색기 폴더로 끌어놓으면 해당 위치로 복사됩니다. Ctrl·Shift로 여러 항목을 선택할 수 있고, 폴더는 하위 내용과 빈 폴더까지 함께 풀립니다. 현재 보고 있는 폴더 기준으로 이름을 유지하며, 원본 압축 파일은 그대로 보존됩니다. 받는 프로그램이 파일 데이터를 요청할 때 선택 항목을 임시 폴더에 풀고 Windows 파일 드래그로 전달합니다. 준비 중에는 진행 표시·암호 입력·취소를 지원하고, 이름 충돌은 탐색기의 복사 대화상자에서 처리합니다.
+
+### Drag files out to extract (1.1.4)
+
+Select files or folders inside an archive and drag them to the desktop or an Explorer folder. Ctrl/Shift multi-selection, nested contents, and empty folders are supported. Names are relative to the currently viewed archive folder; the original archive stays intact. When the target requests file data, selected entries are extracted to a temporary folder and passed through Windows file drag-and-drop. Preparation supports progress, passwords, and cancellation; Explorer handles destination name conflicts.
