@@ -213,6 +213,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public void ForgetDragExportPassword() => _archivePasswords.Remove(CurrentArchivePath);
 
+    public IProgress<ArchiveProgress> CreateDragTransferProgress() => CreateProgress();
+
     public async Task TrackDragTransferAsync(Task completion, Action cancel) => await WithOperation(async token =>
     {
         using var registration = token.Register(cancel);

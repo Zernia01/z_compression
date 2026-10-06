@@ -30,6 +30,7 @@ public sealed class RarArchiveTests
             await engine.TestAsync(archive, password);
             var output = Path.Combine(root, "extracted");
             await engine.ExtractAsync(new ExtractionRequest(archive, output, password));
+            using var session = engine.CreateEntryReadSession(archive, password);
             foreach (var entry in entries)
             {
                 var extracted = Path.Combine(output, entry.Path.Replace('/', Path.DirectorySeparatorChar));
@@ -47,6 +48,10 @@ public sealed class RarArchiveTests
                 using var streamed = new MemoryStream();
                 await direct.CopyToAsync(streamed);
                 CollectionAssert.AreEqual(await File.ReadAllBytesAsync(extracted), streamed.ToArray(), entry.Path);
+                using var continuous = session.Open(entry.Path);
+                using var sessionBytes = new MemoryStream();
+                await continuous.CopyToAsync(sessionBytes);
+                CollectionAssert.AreEqual(streamed.ToArray(), sessionBytes.ToArray(), entry.Path);
             }
         }
         finally { Directory.Delete(root, true); }

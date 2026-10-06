@@ -19,10 +19,10 @@ internal sealed class VirtualArchiveTransfer
     internal Task Completion => _completion.Task;
     internal IntPtr NativeDataPointer => _pointer;
 
-    internal static async Task<VirtualArchiveTransfer> CreateAsync(IReadOnlyList<ArchiveExportEntry> entries, string archive, string? password, Func<ArchiveExportEntry, CancellationToken, System.IO.Stream>? open = null)
+    internal static async Task<VirtualArchiveTransfer> CreateAsync(IReadOnlyList<ArchiveExportEntry> entries, string archive, string? password, Func<ArchiveExportEntry, CancellationToken, System.IO.Stream>? open = null, IProgress<ArchiveProgress>? progress = null)
     {
         var transfer = new VirtualArchiveTransfer();
-        var thread = new Thread(() => transfer.Run(entries, archive, password, open)) { IsBackground = true, Name = "Archive virtual file transfer" };
+        var thread = new Thread(() => transfer.Run(entries, archive, password, open, progress)) { IsBackground = true, Name = "Archive virtual file transfer" };
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
         var marshaled = await transfer._marshaled.Task;
@@ -32,22 +32,24 @@ internal sealed class VirtualArchiveTransfer
         return transfer;
     }
 
-    private void Run(IReadOnlyList<ArchiveExportEntry> entries, string archive, string? password, Func<ArchiveExportEntry, CancellationToken, System.IO.Stream>? open)
+    private void Run(IReadOnlyList<ArchiveExportEntry> entries, string archive, string? password, Func<ArchiveExportEntry, CancellationToken, System.IO.Stream>? open, IProgress<ArchiveProgress>? progress)
     {
         var initialized = OleInitialize(IntPtr.Zero);
+        SharpCompressArchiveEngine.EntryReadSession? session = null;
         try
         {
             Marshal.ThrowExceptionForHR(initialized);
             _dispatcher = Dispatcher.CurrentDispatcher;
             var engine = new SharpCompressArchiveEngine();
-            _data = new VirtualArchiveDataObject(entries, entry => open is null ? engine.OpenEntryReadStream(archive, entry.ArchivePath, password, _cancel.Token) : open(entry, _cancel.Token), QueueFinish);
+            session = engine.CreateEntryReadSession(archive, password, _cancel.Token);
+            _data = new VirtualArchiveDataObject(entries, entry => open is null ? session.Open(entry.ArchivePath) : open(entry, _cancel.Token), QueueFinish, progress);
             var id = new Guid("0000010E-0000-0000-C000-000000000046");
             Marshal.ThrowExceptionForHR(CoMarshalInterThreadInterfaceInStream(ref id, _data, out var marshaled));
             _marshaled.SetResult(marshaled);
             Dispatcher.Run();
         }
         catch (Exception error) { _marshaled.TrySetException(error); _completion.TrySetException(error); }
-        finally { _data?.Dispose(); if (initialized >= 0) OleUninitialize(); }
+        finally { _data?.Dispose(); session?.Dispose(); if (initialized >= 0) OleUninitialize(); }
     }
 
     internal uint Drag()

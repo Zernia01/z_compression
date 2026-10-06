@@ -5,7 +5,7 @@ using System.Runtime.InteropServices.ComTypes;
 namespace ZCompression.App;
 
 [ComVisible(true), ClassInterface(ClassInterfaceType.None)]
-internal sealed class ArchiveContentStream(string name, long length, Func<Stream> open, Action<Exception> failed, Action<ArchiveContentStream> register) : IStream, IDisposable
+internal sealed class ArchiveContentStream(string name, long length, Func<Stream> open, Action<Exception> failed, Action<ArchiveContentStream> register, Action<long, bool>? progress = null) : IStream, IDisposable
 {
     private Stream? _input;
     private long _position;
@@ -30,7 +30,7 @@ internal sealed class ArchiveContentStream(string name, long length, Func<Stream
             if (desired > 0)
             {
                 _input ??= open();
-                var skip = new byte[64 * 1024];
+                var skip = _readPosition < _position ? new byte[1024 * 1024] : [];
                 while (_readPosition < _position)
                 {
                     var skipped = _input.Read(skip, 0, (int)Math.Min(skip.Length, _position - _readPosition));
@@ -39,11 +39,12 @@ internal sealed class ArchiveContentStream(string name, long length, Func<Stream
                 }
                 while (read < desired)
                 {
-                    var received = _input.Read(buffer, read, Math.Min(64 * 1024, desired - read));
+                    var received = _input.Read(buffer, read, Math.Min(1024 * 1024, desired - read));
                     if (received == 0) throw new EndOfStreamException("Archive content ended before its declared size.");
                     read += received;
                     _position += received;
                     _readPosition += received;
+                    progress?.Invoke(_position, false);
                 }
             }
             if (count > 0 && _position == length && _readPosition == length && !_verifiedEnd && (_input is not null || length == 0))
@@ -51,6 +52,9 @@ internal sealed class ArchiveContentStream(string name, long length, Func<Stream
                 _input ??= open();
                 if (_input.Read(new byte[1], 0, 1) != 0) throw new InvalidDataException("Archive content exceeded its declared size.");
                 _verifiedEnd = true;
+                _input.Dispose();
+                _input = null;
+                progress?.Invoke(_position, true);
             }
         }
         catch (Exception error) { failed(error); throw; }
@@ -79,7 +83,7 @@ internal sealed class ArchiveContentStream(string name, long length, Func<Stream
     private void CopyCore(IStream target, long count, IntPtr readCount, IntPtr writtenCount)
     {
         var copied = 0L;
-        var buffer = new byte[64 * 1024];
+        var buffer = new byte[1024 * 1024];
         var bytes = Marshal.AllocCoTaskMem(sizeof(int));
         try
         {
@@ -109,7 +113,7 @@ internal sealed class ArchiveContentStream(string name, long length, Func<Stream
     {
         lock (_gate)
         {
-        var clone = new ArchiveContentStream(name, length, open, failed, register);
+        var clone = new ArchiveContentStream(name, length, open, failed, register, progress);
         clone._position = _position;
         register(clone);
         stream = clone;

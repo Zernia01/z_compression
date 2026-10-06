@@ -29,7 +29,9 @@ public static class ArchiveExportManifest
         if (result.Count == 0) throw new InvalidDataException("No selected archive entries were found.");
         if (result.Count > 1_000_000 || result.Values.Where(entry => !entry.IsDirectory).Sum(entry => entry.Size) > 100L * 1024 * 1024 * 1024)
             throw new InvalidDataException("Archive selection exceeds extraction limits.");
-        return result.Values.OrderBy(entry => entry.Name.Count(character => character == '\\')).ThenBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+        // Create parents first, then preserve archive order so solid readers can continue forward.
+        return result.Values.Where(entry => entry.IsDirectory).OrderBy(entry => entry.Name.Count(character => character == '\\'))
+            .Concat(result.Values.Where(entry => !entry.IsDirectory)).ToArray();
     }
 
     public static IReadOnlyList<ArchiveExportEntry> CreateWholeArchive(IReadOnlyList<ArchiveEntryInfo> entries, string archivePath)

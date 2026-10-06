@@ -45,12 +45,18 @@ internal static class Program
             await engine.CompressAsync(new CompressionRequest([source], archive, ArchiveFormat.Zip));
             var entries = new ArchiveExportEntry[] { new("folder", "", true, 0, null), new("folder\\empty", "", true, 0, null), new("folder\\한글.bin", "payload.bin", false, original.Length, null) };
             var opens = 0;
+            var reports = new List<ArchiveProgress>();
+            var progress = new Progress<ArchiveProgress>(value =>
+            {
+                if (Environment.CurrentManagedThreadId != uiThread) throw new InvalidOperationException("Progress ran outside the UI thread.");
+                reports.Add(value);
+            });
             transfer = await VirtualArchiveTransfer.CreateAsync(entries, archive, null, (entry, token) =>
             {
                 if (Environment.CurrentManagedThreadId == uiThread) throw new InvalidOperationException("Decompression ran on the UI thread.");
                 Interlocked.Increment(ref opens);
                 return new SlowReadStream(engine.OpenEntryReadStream(archive, entry.ArchivePath, cancellationToken: token));
-            });
+            }, progress);
             var dataId = new Guid("0000010E-0000-0000-C000-000000000046");
             Marshal.ThrowExceptionForHR(CoMarshalInterThreadInterfaceInStream(ref dataId, transfer.NativeDataPointer, out var marshaled));
             var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -66,7 +72,8 @@ internal static class Program
             if (!SHA256.HashData(original).SequenceEqual(SHA256.HashData(received))) throw new InvalidOperationException("Content was truncated or changed.");
             if (heartbeat < 5) throw new InvalidOperationException("UI message processing stopped during slow native stream reads.");
             if (opens != 1 || Directory.GetFiles(root, "*", SearchOption.AllDirectories).Length != 2) throw new InvalidOperationException("Export used eager or temporary extraction.");
-            Console.WriteLine($"PASS: native async QI, folder/Unicode descriptors, deferred stream reads, exact bytes, no extracted temporary files, UI heartbeats={heartbeat}.");
+            if (reports.Count < 2 || reports[^1].Percent != 100 || reports[^1].CompletedFiles != 1 || reports[^1].ProcessedBytes != original.Length) throw new InvalidOperationException("Live transfer progress was incomplete.");
+            Console.WriteLine($"PASS: native async QI, folder/Unicode descriptors, deferred stream reads, exact bytes, live UI progress, no extracted temporary files, UI heartbeats={heartbeat}.");
         }
         finally { timer.Stop(); transfer?.Cancel(); transfer?.FinishDrag(0); Directory.Delete(root, true); OleUninitialize(); }
     }

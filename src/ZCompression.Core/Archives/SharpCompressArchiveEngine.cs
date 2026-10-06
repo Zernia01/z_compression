@@ -109,6 +109,48 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         catch { iterator.Dispose(); throw; }
     }
 
+    public EntryReadSession CreateEntryReadSession(string archivePath, string? password = null, CancellationToken cancellationToken = default) => new(this, archivePath, password, cancellationToken);
+
+    // Keep the reader and solid dictionary alive between consecutive destination reads.
+    // Repeated or concurrent requests receive an independent reader instead.
+    public sealed class EntryReadSession(SharpCompressArchiveEngine engine, string archivePath, string? password, CancellationToken token) : IDisposable
+    {
+        private IEnumerator<(IEntry Entry, Func<Stream> OpenStream)>? _iterator;
+        private readonly HashSet<string> _visited = new(StringComparer.Ordinal);
+        private readonly object _gate = new();
+        private bool _active;
+        private bool _disposed;
+
+        public Stream Open(string entryPath)
+        {
+            lock (_gate)
+            {
+                ObjectDisposedException.ThrowIf(_disposed, this);
+                token.ThrowIfCancellationRequested();
+                var path = entryPath.Replace('\\', '/').TrimEnd('/');
+                if (_active || _visited.Contains(path)) return engine.OpenEntryReadStream(archivePath, entryPath, password, token);
+                _iterator ??= ReadEntries(archivePath, password, null).GetEnumerator();
+                while (_iterator.MoveNext())
+                {
+                    token.ThrowIfCancellationRequested();
+                    var (entry, open) = _iterator.Current;
+                    var key = (entry.Key ?? "").Replace('\\', '/').TrimEnd('/');
+                    _visited.Add(key);
+                    if (entry.IsDirectory || key != path) continue;
+                    RejectLink(entry);
+                    var stream = open();
+                    _active = true;
+                    return new OwnedEntryStream(stream, new ReleaseAction(() => { lock (_gate) _active = false; }), token);
+                }
+                throw new FileNotFoundException("The selected archive entry was not found.", entryPath);
+            }
+        }
+
+        public void Dispose() { lock (_gate) { if (_disposed) return; _disposed = true; _iterator?.Dispose(); } }
+    }
+
+    private sealed class ReleaseAction(Action release) : IDisposable { public void Dispose() => release(); }
+
     private sealed class OwnedEntryStream(Stream stream, IDisposable owner, CancellationToken token) : Stream
     {
         public override bool CanRead => true;

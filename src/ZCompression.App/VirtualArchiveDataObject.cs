@@ -23,6 +23,7 @@ internal sealed class VirtualArchiveDataObject : IDataObject, IDataObjectAsyncCa
     private readonly IReadOnlyList<ArchiveExportEntry> _entries;
     private readonly Func<ArchiveExportEntry, Stream> _open;
     private readonly Action _ended;
+    private readonly ArchiveTransferProgress _progress;
     private readonly List<ArchiveContentStream> _streams = [];
     private readonly object _gate = new();
     private readonly short _descriptors = (short)RegisterClipboardFormat("FileGroupDescriptorW");
@@ -33,8 +34,8 @@ internal sealed class VirtualArchiveDataObject : IDataObject, IDataObjectAsyncCa
     internal bool Active { get; private set; }
     internal Exception? Error { get; private set; }
 
-    internal VirtualArchiveDataObject(IReadOnlyList<ArchiveExportEntry> entries, Func<ArchiveExportEntry, Stream> open, Action ended)
-    { _entries = entries; _open = open; _ended = ended; }
+    internal VirtualArchiveDataObject(IReadOnlyList<ArchiveExportEntry> entries, Func<ArchiveExportEntry, Stream> open, Action ended, IProgress<ArchiveProgress>? progress = null)
+    { _entries = entries; _open = open; _ended = ended; _progress = new(entries, progress); }
 
     public void GetData(ref FORMATETC format, out STGMEDIUM medium)
     {
@@ -45,7 +46,7 @@ internal sealed class VirtualArchiveDataObject : IDataObject, IDataObjectAsyncCa
         {
             if (format.lindex < 0) throw new COMException("A file content index is required.", unchecked((int)0x80040068));
             var entry = _entries[format.lindex];
-            var stream = new ArchiveContentStream(entry.Name, entry.Size, () => _open(entry), error => Error ??= error, RegisterStream);
+            var stream = new ArchiveContentStream(entry.Name, entry.Size, () => _open(entry), error => Error ??= error, RegisterStream, (position, complete) => _progress.Report(entry.Name, position, complete));
             RegisterStream(stream);
             medium.tymed = TYMED.TYMED_ISTREAM;
             medium.unionmember = Marshal.GetComInterfaceForObject(stream, typeof(IStream));

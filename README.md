@@ -136,6 +136,10 @@ Select files or folders inside an archive and drag them to the desktop or an Exp
 
 Selected entries are prepared asynchronously before starting Windows drag-and-drop. File data requests perform no extraction or UI dispatch. If you release the mouse while preparation is running, wait for the ready message and drag the same selection again; completed files are reused.
 
+### 드래그 압축 풀기 진행 창 (1.1.7)
+
+파일 목록이나 큰 압축 파일 제목을 밖으로 끌어 놓으면 기존 압축 풀기 진행 창에서 진행률, 현재 파일, 파일 수, 처리 용량, 속도, 경과 시간과 남은 시간을 표시합니다. 백그라운드와 중지 버튼도 사용할 수 있습니다. 파일을 미리 풀지 않고 목적지에서 읽을 때 전달하며, 읽기 세션과 솔리드 사전을 재사용하고 원본 파일 순서를 유지해 반복 읽기를 줄입니다. 다시 읽거나 스트림을 복제해도 진행 용량을 중복 계산하지 않습니다.
+
 ### 놓으면서 압축 풀기 (1.1.6)
 
 미리 풀거나 임시 파일을 준비하지 않고 Windows 가상 파일(FileGroupDescriptorW / FileContents)로 전달합니다. 드래그 중에는 파일 정보만 제공하며, 놓은 뒤 탐색기가 내용을 읽으면 압축 파일에서 스트리밍으로 풀어 목적지에 기록합니다. 여러 파일·폴더, 한글 이름, 빈 폴더를 지원합니다. 파일 전달은 UI와 분리되고 비동기 전송을 지원하며, 진행·동일 이름 처리·취소는 탐색기의 복사 창에서 수행합니다. 암호가 필요한 항목은 드래그 전 암호를 입력합니다. 원본 압축 파일은 유지됩니다. 가상 파일을 받지 못하는 프로그램에는 끌어놓을 수 없습니다.

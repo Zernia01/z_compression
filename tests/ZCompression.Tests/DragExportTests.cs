@@ -8,6 +8,87 @@ namespace ZCompression.Tests;
 public sealed class DragExportTests
 {
     [TestMethod]
+    public void TransferProgressCountsUniqueBytesAndCompletedFiles_WhenStreamsAreReread()
+    {
+        var reports = new List<ArchiveProgress>();
+        var progress = new ArchiveTransferProgress([new("folder", "", true, 0, null), new("a", "a", false, 8, null), new("empty", "empty", false, 0, null)], new CaptureProgress(reports.Add));
+        progress.Report("a", 4, false);
+        Assert.AreEqual(50d, reports[0].Percent);
+        progress.Report("a", 8, true);
+        progress.Report("a", 2, false); // A clone/rewind must not count the bytes twice.
+        progress.Report("a", 8, true);
+        progress.Report("empty", 0, true);
+        var last = reports[^1];
+        Assert.AreEqual(8L, last.ProcessedBytes);
+        Assert.AreEqual(8L, last.TotalBytes);
+        Assert.AreEqual(2, last.CompletedFiles);
+        Assert.AreEqual(2, last.TotalFiles);
+        Assert.AreEqual(100d, last.Percent);
+    }
+
+    private sealed class CaptureProgress(Action<ArchiveProgress> report) : IProgress<ArchiveProgress>
+    { public void Report(ArchiveProgress value) => report(value); }
+
+    [TestMethod]
+    public async Task ReusableSessionStopsReadingWhenCancelled_AndReleasesArchive()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "z-compression-cancel-tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var archive = Path.Combine(root, "cancel.zip");
+            using (var zip = ZipFile.Open(archive, ZipArchiveMode.Create))
+            using (var output = zip.CreateEntry("payload.bin").Open()) output.Write(new byte[256 * 1024]);
+            using var cancellation = new CancellationTokenSource();
+            using (var session = new SharpCompressArchiveEngine().CreateEntryReadSession(archive, cancellationToken: cancellation.Token))
+            using (var input = session.Open("payload.bin"))
+            {
+                Assert.AreEqual(1, input.Read(new byte[1], 0, 1));
+                await cancellation.CancelAsync();
+                Assert.ThrowsExactly<OperationCanceledException>(() => input.Read(new byte[1], 0, 1));
+            }
+            using var released = File.Open(archive, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [TestMethod]
+    [DataRow(ArchiveFormat.Zip, ".zip")]
+    [DataRow(ArchiveFormat.SevenZip, ".7z")]
+    [DataRow(ArchiveFormat.TarGZip, ".tar.gz")]
+    public async Task ReusableSessionReadsAllFilesAndRepeatedRequests_WithoutExpandedTemporaryFiles(ArchiveFormat format, string extension)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "z-compression-session-tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var source = Directory.CreateDirectory(Path.Combine(root, "source")).FullName;
+            foreach (var name in new[] { "z-last.bin", "a-first.bin", "empty.bin" })
+                await File.WriteAllBytesAsync(Path.Combine(source, name), name == "empty.bin" ? [] : Enumerable.Range(0, 300000).Select(i => (byte)i).ToArray());
+            var archive = Path.Combine(root, "source" + extension);
+            var engine = new SharpCompressArchiveEngine();
+            await engine.CompressAsync(new CompressionRequest([source], archive, format));
+            var entries = await engine.ListAsync(archive);
+            var manifest = ArchiveExportManifest.Create(entries, null, "");
+            CollectionAssert.AreEqual(entries.Where(entry => !entry.IsDirectory).Select(entry => entry.Path).ToArray(), manifest.Where(entry => !entry.IsDirectory).Select(entry => entry.ArchivePath).ToArray());
+            using (var session = engine.CreateEntryReadSession(archive))
+            {
+                using (var probe = File.Open(archive, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { } // Still lazy.
+                foreach (var entry in manifest.Where(entry => !entry.IsDirectory).Concat(manifest.Where(entry => !entry.IsDirectory).Reverse()))
+                {
+                    using var input = session.Open(entry.ArchivePath);
+                    using var output = new MemoryStream();
+                    await input.CopyToAsync(output);
+                    CollectionAssert.AreEqual(await File.ReadAllBytesAsync(Path.Combine(root, entry.ArchivePath.Replace('/', Path.DirectorySeparatorChar))), output.ToArray());
+                }
+            }
+            Assert.HasCount(4, Directory.GetFiles(root, "*", SearchOption.AllDirectories));
+            using var released = File.Open(archive, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [TestMethod]
     public async Task SelectedFolderAndFiles_KeepNamesAndExcludeSiblingsAndParentPaths()
     {
         var root = Path.Combine(Path.GetTempPath(), "z-compression-drag-tests", Guid.NewGuid().ToString("N"));

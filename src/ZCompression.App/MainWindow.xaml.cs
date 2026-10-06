@@ -173,15 +173,21 @@ public partial class MainWindow : Window
     {
         _exportingDrag = true;
         VirtualArchiveTransfer? transfer = null;
+        OperationProgressWindow? progressWindow = null;
         try
         {
             var manifest = createManifest();
             var password = _viewModel.GetDragExportPassword(manifest.Any(entry => entry.IsEncrypted));
-            transfer = await VirtualArchiveTransfer.CreateAsync(manifest, _viewModel.CurrentArchivePath, password);
+            transfer = await VirtualArchiveTransfer.CreateAsync(manifest, _viewModel.CurrentArchivePath, password, progress: _viewModel.CreateDragTransferProgress());
             var tracking = _viewModel.TrackDragTransferAsync(transfer.Completion, transfer.Cancel);
             uint effects = 0;
             try { effects = transfer.Drag(); }
             finally { transfer.FinishDrag(effects); }
+            if (effects != 0)
+            {
+                progressWindow = new OperationProgressWindow(_viewModel, LocalizationManager.Instance["ExtractAction"], Path.GetFileName(_viewModel.CurrentArchivePath), true) { Owner = this };
+                progressWindow.Show();
+            }
             await tracking;
         }
         catch (OperationCanceledException) { }
@@ -190,7 +196,7 @@ public partial class MainWindow : Window
             _viewModel.ForgetDragExportPassword();
             MessageBox.Show(this, _viewModel.FriendlyError(exception), "z_compression", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-        finally { transfer?.FinishDrag(0); _exportingDrag = false; }
+        finally { progressWindow?.Finish(); transfer?.FinishDrag(0); _exportingDrag = false; }
     }
 
     private static DataGridRow? FindArchiveRow(DependencyObject? element)
