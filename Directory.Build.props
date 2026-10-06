@@ -3,7 +3,7 @@
     <LangVersion>latest</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AnalysisLevel>latest</AnalysisLevel>
-    <Version>1.1.7</Version>
+    <Version>1.1.8</Version>
     <Authors>z_compression contributors</Authors>
     <Product>z_compression</Product>
   </PropertyGroup>

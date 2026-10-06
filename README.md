@@ -136,6 +136,10 @@ Select files or folders inside an archive and drag them to the desktop or an Exp
 
 Selected entries are prepared asynchronously before starting Windows drag-and-drop. File data requests perform no extraction or UI dispatch. If you release the mouse while preparation is running, wait for the ready message and drag the same selection again; completed files are reused.
 
+### 드래그 압축 풀기 진행 창 중복 수정 (1.1.8)
+
+밖으로 끌어 놓으면 바탕화면이나 탐색기의 대상 폴더를 확인하고 앱이 그 위치에 직접 압축을 풉니다. 탐색기의 복사 작업을 시작하지 않으므로 z_compression 진행 창만 표시됩니다. 진행률·속도·남은 시간, 백그라운드·중지 버튼을 사용할 수 있습니다. 빈 공간은 열린 폴더, 폴더 항목은 해당 폴더를 대상으로 합니다. 큰 제목을 끌면 압축 파일 이름의 폴더에 전체 내용을 풉니다. 미리 압축을 풀지 않으며 원본을 순서대로 읽습니다. 같은 이름의 파일이 있으면 덮어쓰기 전에 확인합니다.
+
 ### 드래그 압축 풀기 진행 창 (1.1.7)
 
 파일 목록이나 큰 압축 파일 제목을 밖으로 끌어 놓으면 기존 압축 풀기 진행 창에서 진행률, 현재 파일, 파일 수, 처리 용량, 속도, 경과 시간과 남은 시간을 표시합니다. 백그라운드와 중지 버튼도 사용할 수 있습니다. 파일을 미리 풀지 않고 목적지에서 읽을 때 전달하며, 읽기 세션과 솔리드 사전을 재사용하고 원본 파일 순서를 유지해 반복 읽기를 줄입니다. 다시 읽거나 스트림을 복제해도 진행 용량을 중복 계산하지 않습니다.

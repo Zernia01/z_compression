@@ -213,13 +213,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public void ForgetDragExportPassword() => _archivePasswords.Remove(CurrentArchivePath);
 
-    public IProgress<ArchiveProgress> CreateDragTransferProgress() => CreateProgress();
-
-    public async Task TrackDragTransferAsync(Task completion, Action cancel) => await WithOperation(async token =>
+    public async Task ExtractDroppedSelectionAsync(Func<CancellationToken, Task<ExtractionRequest?>> prepare) => await WithOperation(async token =>
     {
-        using var registration = token.Register(cancel);
+        Status = _localization["Preparing"];
+        var request = await prepare(token);
+        if (request is null) { Status = _localization["Ready"]; return; }
         Status = _localization["Extracting"];
-        await completion;
+        await _engine.ExtractAsync(request, CreateProgress(), token);
         Status = _localization["ExtractionComplete"];
     });
 

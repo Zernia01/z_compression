@@ -9,4 +9,4 @@
 ,"ShellExtractNow":"使用 z_compression 解壓縮至資料夾","ShellCompressNow":"使用 z_compression 立即壓縮"
 ,"ExplorerShortcutHint":"字母和數字會立即同步至檔案總管選單。Ctrl/Alt/Shift 組合在選單中使用最後的字元鍵。功能鍵和符號鍵僅在應用程式內有效。Delete 同時清除選單快速鍵。","ShortcutSyncFailed":"無法儲存快速鍵或更新選單，請檢查權限後重試。",
   "ArchiveTitleDragHint":"拖出此標題，將整個壓縮檔解壓縮到同名資料夾。"
-}
+,"DropFolderUnsupported":"請拖到桌面、檔案總管資料夾的空白處或資料夾項目上。無法確認此位置的路徑。","DropOverwriteConfirm":"已有 {0:N0} 個同名檔案。是否覆寫？"}

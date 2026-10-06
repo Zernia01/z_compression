@@ -9,4 +9,4 @@
 ,"ShellExtractNow":"Extract to folder with z_compression ","ShellCompressNow":"Compress now with z_compression "
 ,"ExplorerShortcutHint":"Letters and numbers also update the Explorer menu immediately. Ctrl/Alt/Shift combinations use their final letter in the menu. Function and punctuation keys work inside the app only. Delete clears both.","ShortcutSyncFailed":"Could not save the shortcut or update the Explorer menu. Check permissions and try again.",
   "ArchiveTitleDragHint":"Drag this title out to extract the whole archive into a named folder."
-}
+,"DropFolderUnsupported":"Drop on the desktop, an Explorer folder background, or a folder item. This location could not be resolved safely.","DropOverwriteConfirm":"{0:N0} file(s) already exist. Replace these files?"}

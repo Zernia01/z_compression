@@ -150,7 +150,9 @@ public partial class MainWindow : Window
         var items = ArchiveGrid.SelectedItems.Cast<ArchiveBrowserItem>().Where(item => !item.IsParent).ToArray();
         if (items.Length == 0) return;
         e.Handled = true;
-        await ExportArchiveSelectionAsync(() => ArchiveExportManifest.Create(_viewModel.Entries.ToArray(), items.Select(item => item.Path).ToArray(), _viewModel.CurrentFolder));
+        var selectedPaths = items.Select(item => item.Path).ToArray();
+        var folder = _viewModel.CurrentFolder;
+        await ExportArchiveSelectionAsync(() => ArchiveExportManifest.Create(_viewModel.Entries.ToArray(), selectedPaths, folder), selectedPaths, folder, false);
     }
 
     private void OnArchiveTitleDragStart(object sender, MouseButtonEventArgs e)
@@ -166,29 +168,31 @@ public partial class MainWindow : Window
         if (Math.Abs(position.X - origin.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(position.Y - origin.Y) < SystemParameters.MinimumVerticalDragDistance) return;
         _archiveTitleDragOrigin = null;
         e.Handled = true;
-        await ExportArchiveSelectionAsync(() => ArchiveExportManifest.CreateWholeArchive(_viewModel.Entries.ToArray(), _viewModel.CurrentArchivePath));
+        await ExportArchiveSelectionAsync(() => ArchiveExportManifest.CreateWholeArchive(_viewModel.Entries.ToArray(), _viewModel.CurrentArchivePath), null, "", true);
     }
 
-    private async Task ExportArchiveSelectionAsync(Func<IReadOnlyList<ArchiveExportEntry>> createManifest)
+    private async Task ExportArchiveSelectionAsync(Func<IReadOnlyList<ArchiveExportEntry>> createManifest, IReadOnlyList<string>? selectedPaths, string relativeRoot, bool wholeArchive)
     {
         _exportingDrag = true;
-        VirtualArchiveTransfer? transfer = null;
         OperationProgressWindow? progressWindow = null;
         try
         {
-            var manifest = createManifest();
-            var password = _viewModel.GetDragExportPassword(manifest.Any(entry => entry.IsEncrypted));
-            transfer = await VirtualArchiveTransfer.CreateAsync(manifest, _viewModel.CurrentArchivePath, password, progress: _viewModel.CreateDragTransferProgress());
-            var tracking = _viewModel.TrackDragTransferAsync(transfer.Completion, transfer.Cancel);
-            uint effects = 0;
-            try { effects = transfer.Drag(); }
-            finally { transfer.FinishDrag(effects); }
-            if (effects != 0)
+            await _viewModel.ExtractDroppedSelectionAsync(async token =>
             {
-                progressWindow = new OperationProgressWindow(_viewModel, LocalizationManager.Instance["ExtractAction"], Path.GetFileName(_viewModel.CurrentArchivePath), true) { Owner = this };
+                var archive = _viewModel.CurrentArchivePath;
+                var manifest = createManifest();
+                var location = ArchiveDestinationDrag.Drag(manifest);
+                if (location is null) return null;
+                var destination = await ShellDropDestination.ResolveAsync(location, token);
+                if (destination is null) throw new NotSupportedException(LocalizationManager.Instance["DropFolderUnsupported"]);
+                var existing = await Task.Run(() => ArchiveDropExtraction.CountExistingFiles(destination, archive, manifest, token), token);
+                if (existing > 0 && MessageBox.Show(this, string.Format(LocalizationManager.Instance["DropOverwriteConfirm"], existing), "z_compression", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes) return null;
+                var password = _viewModel.GetDragExportPassword(manifest.Any(entry => entry.IsEncrypted));
+                var request = ArchiveDropExtraction.CreateRequest(archive, destination, wholeArchive, selectedPaths, relativeRoot, password);
+                progressWindow = new OperationProgressWindow(_viewModel, LocalizationManager.Instance["ExtractAction"], Path.GetFileName(archive), true) { Owner = this };
                 progressWindow.Show();
-            }
-            await tracking;
+                return request;
+            });
         }
         catch (OperationCanceledException) { }
         catch (Exception exception)
@@ -196,7 +200,7 @@ public partial class MainWindow : Window
             _viewModel.ForgetDragExportPassword();
             MessageBox.Show(this, _viewModel.FriendlyError(exception), "z_compression", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-        finally { progressWindow?.Finish(); transfer?.FinishDrag(0); _exportingDrag = false; }
+        finally { progressWindow?.Finish(); _exportingDrag = false; }
     }
 
     private static DataGridRow? FindArchiveRow(DependencyObject? element)

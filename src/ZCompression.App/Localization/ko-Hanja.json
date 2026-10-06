@@ -9,4 +9,4 @@
 ,"ShellExtractNow":"z_compression으로 폴더에 풀기","ShellCompressNow":"z_compression으로 바로 壓縮"
 ,"ExplorerShortcutHint":"文字·數字 키는 탐색기 메뉴에도 즉시 反映됩니다. Ctrl/Alt/Shift 組合은 메뉴에서 마지막 文字 키로 使用합니다. 기능·기호 키는 앱 안에서만 動作합니다. Delete로 解除하면 메뉴 키도 解除됩니다.","ShortcutSyncFailed":"短縮키 저장 또는 탐색기 메뉴 更新에 실패했습니다. 權限을 확인하고 다시 시도하세요.",
   "ArchiveTitleDragHint":"제목을 밖으로 끌면 압축 파일 전체를 이름의 폴더에 풉니다."
-}
+,"DropFolderUnsupported":"바탕畵面, 探索機 폴더의 빈 空間 또는 폴더 項目에 놓아 주세요. 이 位置의 폴더 經路를 確認할 수 없습니다.","DropOverwriteConfirm":"같은 이름의 파일 {0:N0}個가 있습니다. 덮어쓰시겠습니까?"}

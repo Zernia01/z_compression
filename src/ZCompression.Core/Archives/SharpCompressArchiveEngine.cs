@@ -271,6 +271,8 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         var processed = 0L;
         var completed = 0;
         var watch = Stopwatch.StartNew();
+        var copyBuffer = new byte[ArchiveReadBufferSize];
+        var lastByteReport = 0L;
         foreach (var (entry, openStream) in ReadEntries(request.ArchivePath, request.Password, request.LegacyEncoding))
         {
             token.ThrowIfCancellationRequested();
@@ -290,8 +292,20 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
                 Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
                 using var input = openStream();
                 using var output = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024, FileOptions.SequentialScan);
-                input.CopyToAsync(output, ArchiveReadBufferSize, token).GetAwaiter().GetResult();
-                processed += entry.Size;
+                var entryProcessed = 0L;
+                int read;
+                while ((read = input.Read(copyBuffer, 0, copyBuffer.Length)) > 0)
+                {
+                    token.ThrowIfCancellationRequested();
+                    output.Write(copyBuffer, 0, read);
+                    entryProcessed += read;
+                    if (watch.ElapsedMilliseconds - lastByteReport >= 100)
+                    {
+                        lastByteReport = watch.ElapsedMilliseconds;
+                        Report(progress, key, completed, entries.Length, processed + entryProcessed, total, watch.Elapsed);
+                    }
+                }
+                processed += entryProcessed;
                 if (entry.LastModifiedTime is { } modified) File.SetLastWriteTime(destination, modified);
             }
             completed++;

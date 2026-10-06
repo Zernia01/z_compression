@@ -27,7 +27,10 @@ internal static class Program
 
     private static async Task RunAsync()
     {
+        VerifyAppOwnedDrop();
         Marshal.ThrowExceptionForHR(OleInitialize(IntPtr.Zero));
+        VerifyAccessibleInterop();
+        Console.WriteLine($"PASS: read-only Explorer view protocol probe, available views={ShellDropDestination.ProbeShellViews()}.");
         var root = Path.Combine(Path.GetTempPath(), "z-compression-virtual-drag-smoke", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         var heartbeat = 0;
@@ -77,6 +80,44 @@ internal static class Program
         }
         finally { timer.Stop(); transfer?.Cancel(); transfer?.FinishDrag(0); Directory.Delete(root, true); OleUninitialize(); }
     }
+
+    private static void VerifyAppOwnedDrop()
+    {
+        var captures = 0;
+        var expected = new ShellDropLocation(1, 2, new IntPtr(3), new IntPtr(4), true);
+        var source = new DestinationDropSource(() => { captures++; return expected; });
+        var pointer = Marshal.GetComInterfaceForObject(source, typeof(IArchiveDropSource));
+        try
+        {
+            var query = Method<QueryContinue>(pointer, 3);
+            if (query(pointer, false, 1) != 0 || captures != 0) throw new InvalidOperationException("Drag captured a destination before release.");
+            if (query(pointer, true, 0) != 0x00040101 || captures != 0) throw new InvalidOperationException("Escape did not cancel without extraction.");
+            if (query(pointer, false, 0) != 0x00040101 || captures != 1 || source.Location != expected) throw new InvalidOperationException("Mouse release must cancel the shell copy and capture the app destination.");
+            Console.WriteLine("PASS: native drop source cancels Explorer copying before app extraction; Escape never starts extraction.");
+        }
+        finally { Marshal.Release(pointer); }
+    }
+
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate int QueryContinue(IntPtr self, [MarshalAs(UnmanagedType.Bool)] bool escape, uint keys);
+
+    private static void VerifyAccessibleInterop()
+    {
+        var handle = CreateWindowEx(0, "STATIC", "z_compression protocol probe", 0x80000000, 0, 0, 1, 1, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+        if (handle == IntPtr.Zero) throw new InvalidOperationException("Could not create a hidden protocol test window.");
+        IAccessibleHit? accessible = null;
+        try
+        {
+            var id = new Guid("618736E0-3C3D-11CF-810C-00AA00389B71");
+            Marshal.ThrowExceptionForHR(AccessibleObjectFromWindow(handle, 0, in id, out accessible));
+            if (accessible.GetRole(0) is not int role || role != 9 || accessible.GetName(0) != "z_compression protocol probe") throw new InvalidOperationException("IAccessible vtable layout is incorrect.");
+            Console.WriteLine("PASS: native folder hit-test accessibility interface layout.");
+        }
+        finally { if (accessible is not null) Marshal.ReleaseComObject(accessible); DestroyWindow(handle); }
+    }
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr CreateWindowEx(uint extended, string className, string title, uint style, int x, int y, int width, int height, IntPtr parent, IntPtr menu, IntPtr instance, IntPtr param);
+    [DllImport("user32.dll")] private static extern bool DestroyWindow(IntPtr window);
+    [DllImport("oleacc.dll")] private static extern int AccessibleObjectFromWindow(IntPtr window, uint objectId, in Guid id, [MarshalAs(UnmanagedType.Interface)] out IAccessibleHit accessible);
 
     private static void ReadOnTargetThread(IntPtr marshaled, TaskCompletionSource started, TaskCompletionSource<byte[]> copied, Func<int> opens)
     {

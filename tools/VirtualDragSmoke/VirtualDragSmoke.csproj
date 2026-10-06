@@ -7,6 +7,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../src/ZCompression.App/ArchiveDestinationDrag.cs" Link="ArchiveDestinationDrag.cs" />
+    <Compile Include="../../src/ZCompression.App/ShellDropDestination.cs" Link="ShellDropDestination.cs" />
     <ProjectReference Include="../../src/ZCompression.Core/ZCompression.Core.csproj" />
     <Compile Include="../../src/ZCompression.App/ArchiveContentStream.cs" Link="ArchiveContentStream.cs" />
     <Compile Include="../../src/ZCompression.App/VirtualArchiveDataObject.cs" Link="VirtualArchiveDataObject.cs" />
