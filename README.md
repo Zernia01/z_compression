@@ -127,3 +127,11 @@ Startup compares existing file associations and menu values and writes only chan
 ### Drag files out to extract (1.1.4)
 
 Select files or folders inside an archive and drag them to the desktop or an Explorer folder. Ctrl/Shift multi-selection, nested contents, and empty folders are supported. Names are relative to the currently viewed archive folder; the original archive stays intact. When the target requests file data, selected entries are extracted to a temporary folder and passed through Windows file drag-and-drop. Preparation supports progress, passwords, and cancellation; Explorer handles destination name conflicts.
+
+### 드래그 멈춤 수정 (1.1.5)
+
+드래그 데이터 요청 중 압축 해제와 UI 대기를 수행하던 코드를 제거했습니다. 먼저 비동기로 선택 항목을 준비한 뒤 완성된 파일 목록만 탐색기에 전달합니다. 준비 중 마우스를 놓았다면 준비 완료 안내 후 같은 항목을 다시 끌어놓으세요. 같은 선택은 준비된 파일을 재사용합니다.
+
+### Drag freeze fix (1.1.5)
+
+Selected entries are prepared asynchronously before starting Windows drag-and-drop. File data requests perform no extraction or UI dispatch. If you release the mouse while preparation is running, wait for the ready message and drag the same selection again; completed files are reused.

@@ -7,5 +7,6 @@
   ,"ShortcutCaptureHintV2":"选择按钮后按下所需的单键或组合键。按 Delete 可清除。","ShortcutInvalidV2":"无法使用该按键。请输入其他单键或组合键。"
 ,"ArchivePassword":"压缩文件密码","PasswordPrompt":"请输入压缩文件密码。如果已输入，请检查密码后重试。","OptionalPassword":"密码（可选）","RarCreationHint":"创建 RAR 使用已安装的 WinRAR。解压不需要 WinRAR。","RarToolRequired":"创建 RAR 需要安装 WinRAR，或通过 Z_COMPRESSION_RAR_PATH 指定 rar.exe。"
 ,"ShellExtractNow":"使用 z_compression 解压到文件夹","ShellCompressNow":"使用 z_compression 立即压缩"
-,"ExplorerShortcutHint":"字母和数字会立即同步到资源管理器菜单。Ctrl/Alt/Shift 组合在菜单中使用最后的字符键。功能键和符号键仅在应用内有效。Delete 同时清除菜单快捷键。","ShortcutSyncFailed":"无法保存快捷键或更新菜单，请检查权限后重试。"
+,"ExplorerShortcutHint":"字母和数字会立即同步到资源管理器菜单。Ctrl/Alt/Shift 组合在菜单中使用最后的字符键。功能键和符号键仅在应用内有效。Delete 同时清除菜单快捷键。","ShortcutSyncFailed":"无法保存快捷键或更新菜单，请检查权限后重试。",
+  "DragExportReady":"文件已准备好。请再次拖到目标位置。"
 }

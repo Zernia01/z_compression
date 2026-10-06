@@ -7,5 +7,6 @@
   ,"ShortcutCaptureHintV2":"Select a button, then press a single key or key combination. Press Delete to clear it.","ShortcutInvalidV2":"That key cannot be used. Press another single key or key combination."
 ,"ArchivePassword":"Archive password","PasswordPrompt":"Enter the archive password. If you already tried a password, check it and try again.","OptionalPassword":"Password (optional)","RarCreationHint":"RAR creation uses your separately installed WinRAR. Extraction works without WinRAR.","RarToolRequired":"Install WinRAR to create RAR archives, or set Z_COMPRESSION_RAR_PATH to rar.exe."
 ,"ShellExtractNow":"Extract to folder with z_compression ","ShellCompressNow":"Compress now with z_compression "
-,"ExplorerShortcutHint":"Letters and numbers also update the Explorer menu immediately. Ctrl/Alt/Shift combinations use their final letter in the menu. Function and punctuation keys work inside the app only. Delete clears both.","ShortcutSyncFailed":"Could not save the shortcut or update the Explorer menu. Check permissions and try again."
+,"ExplorerShortcutHint":"Letters and numbers also update the Explorer menu immediately. Ctrl/Alt/Shift combinations use their final letter in the menu. Function and punctuation keys work inside the app only. Delete clears both.","ShortcutSyncFailed":"Could not save the shortcut or update the Explorer menu. Check permissions and try again.",
+  "DragExportReady":"Files are ready. Drag them again to the destination."
 }

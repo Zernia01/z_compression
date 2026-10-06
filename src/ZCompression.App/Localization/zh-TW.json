@@ -7,5 +7,6 @@
   ,"ShortcutCaptureHintV2":"選取按鈕後按下想要的單鍵或組合鍵。按 Delete 可清除。","ShortcutInvalidV2":"無法使用此按鍵。請輸入其他單鍵或組合鍵。"
 ,"ArchivePassword":"壓縮檔密碼","PasswordPrompt":"請輸入壓縮檔密碼。如果已輸入，請檢查密碼後重試。","OptionalPassword":"密碼（選填）","RarCreationHint":"建立 RAR 使用已安裝的 WinRAR。解壓縮不需要 WinRAR。","RarToolRequired":"建立 RAR 需要安裝 WinRAR，或透過 Z_COMPRESSION_RAR_PATH 指定 rar.exe。"
 ,"ShellExtractNow":"使用 z_compression 解壓縮至資料夾","ShellCompressNow":"使用 z_compression 立即壓縮"
-,"ExplorerShortcutHint":"字母和數字會立即同步至檔案總管選單。Ctrl/Alt/Shift 組合在選單中使用最後的字元鍵。功能鍵和符號鍵僅在應用程式內有效。Delete 同時清除選單快速鍵。","ShortcutSyncFailed":"無法儲存快速鍵或更新選單，請檢查權限後重試。"
+,"ExplorerShortcutHint":"字母和數字會立即同步至檔案總管選單。Ctrl/Alt/Shift 組合在選單中使用最後的字元鍵。功能鍵和符號鍵僅在應用程式內有效。Delete 同時清除選單快速鍵。","ShortcutSyncFailed":"無法儲存快速鍵或更新選單，請檢查權限後重試。",
+  "DragExportReady":"檔案已準備好。請再次拖到目標位置。"
 }

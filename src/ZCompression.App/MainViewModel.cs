@@ -214,6 +214,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         Status = _localization["ExtractionComplete"];
     });
 
+    public void ShowDragExportReady() => Status = _localization["DragExportReady"];
+
     public static bool IsPotentiallyExecutable(string name)
     {
         var extension = Path.GetExtension(name);

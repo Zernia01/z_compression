@@ -1,6 +1,4 @@
 using System.IO.Compression;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.ComTypes;
 using ZCompression.App;
 using ZCompression.Core.Archives;
 
@@ -79,40 +77,38 @@ public sealed class DragExportTests
     }
 
     [TestMethod]
-    public void FormatChecksDoNotExtract_FileRequestsPrepareOnlyOnce()
+    public async Task FileDeliveryWaitsForAsyncPreparation_AndRepeatDragReusesFiles()
     {
-        var prepared = 0;
-        var data = new DeferredArchiveDataObject(new FakeDataObject(), 15, () => prepared++);
-        var format = new FORMATETC { cfFormat = 15, tymed = TYMED.TYMED_HGLOBAL };
-        data.QueryGetData(ref format);
-        Assert.AreEqual(0, prepared);
-        data.GetData(ref format, out _);
-        data.GetData(ref format, out _);
-        Assert.AreEqual(1, prepared);
+        var root = Path.Combine(Path.GetTempPath(), "z-compression-drag-tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var path = Path.Combine(root, "한글.txt");
+            var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var calls = 0;
+            var export = new PreparedDragExport([path], async () => { calls++; await release.Task; await File.WriteAllTextAsync(path, "ready"); });
+            var preparation = export.PrepareAsync();
+            Assert.IsFalse(preparation.IsCompleted);
+            Assert.IsFalse(export.IsReady);
+            Assert.ThrowsExactly<InvalidOperationException>(() => export.GetReadyPaths());
+            release.SetResult();
+            await preparation.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.IsTrue(export.IsReady);
+            await export.PrepareAsync();
+            Assert.AreEqual(path, export.GetReadyPaths().Single());
+            Assert.AreEqual(1, calls);
+            File.Delete(path);
+            Assert.IsFalse(export.IsReady);
+        }
+        finally { Directory.Delete(root, true); }
     }
 
     [TestMethod]
-    public void FailedExportDoesNotReturnPartialFilesOrRetryExtraction()
+    public async Task CancellationDoesNotExposePartialFilePaths()
     {
-        var prepared = 0;
-        var data = new DeferredArchiveDataObject(new FakeDataObject(), 15, () => { prepared++; throw new OperationCanceledException(); });
-        var format = new FORMATETC { cfFormat = 15, tymed = TYMED.TYMED_HGLOBAL };
-        Assert.ThrowsExactly<COMException>(() => data.GetData(ref format, out _));
-        Assert.ThrowsExactly<COMException>(() => data.GetData(ref format, out _));
-        Assert.IsInstanceOfType<OperationCanceledException>(data.Error);
-        Assert.AreEqual(1, prepared);
-    }
-
-    private sealed class FakeDataObject : IDataObject
-    {
-        public void GetData(ref FORMATETC format, out STGMEDIUM medium) => medium = default;
-        public void GetDataHere(ref FORMATETC format, ref STGMEDIUM medium) { }
-        public int QueryGetData(ref FORMATETC format) => 0;
-        public int GetCanonicalFormatEtc(ref FORMATETC input, out FORMATETC output) { output = input; return 0; }
-        public void SetData(ref FORMATETC format, ref STGMEDIUM medium, bool release) { }
-        public IEnumFORMATETC EnumFormatEtc(DATADIR direction) => throw new NotSupportedException();
-        public int DAdvise(ref FORMATETC format, ADVF flags, IAdviseSink sink, out int connection) { connection = 0; return 0; }
-        public void DUnadvise(int connection) { }
-        public int EnumDAdvise(out IEnumSTATDATA enumerator) { enumerator = null!; return 1; }
+        var export = new PreparedDragExport(["unused"], () => Task.FromCanceled(new CancellationToken(true)));
+        await Assert.ThrowsExactlyAsync<TaskCanceledException>(() => export.PrepareAsync());
+        Assert.IsFalse(export.IsReady);
+        Assert.ThrowsExactly<InvalidOperationException>(() => export.GetReadyPaths());
     }
 }
