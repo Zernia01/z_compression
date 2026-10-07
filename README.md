@@ -98,6 +98,15 @@ RAR creation and modification require a separately installed [WinRAR](https://ww
 
 On Windows 11, the Explorer compression command may appear under `Show more options`.
 
+
+## AI 사용 안내
+
+이 프로젝트의 개발 및 문서 작성 과정 일부에는 OpenAI의 ChatGPT 및 Codex와 같은 생성형 AI 도구가 보조적으로 사용되었습니다. AI가 생성하거나 제안한 내용은 프로젝트 작성자가 직접 검토·수정하여 적용했습니다.
+
+### AI Assistance
+
+Generative AI tools, including OpenAI ChatGPT and Codex, were used as assistants during parts of this project's development and documentation. AI-generated suggestions and content were reviewed and edited by the project author before being incorporated.
+
 ## Privacy and license
 
 Settings are stored as UTF-8 JSON under `%LOCALAPPDATA%\z_compression`. Update checks only contact this repository's GitHub Releases API. Downloaded update packages must match the manifest size and SHA-256 hash before installation.
