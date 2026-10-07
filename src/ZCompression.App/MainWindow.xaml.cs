@@ -155,6 +155,18 @@ public partial class MainWindow : Window
         await ExportArchiveSelectionAsync(() => ArchiveExportManifest.Create(_viewModel.Entries.ToArray(), selectedPaths, folder), selectedPaths, folder, false);
     }
 
+    private void OnCommandBarSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (ArchiveSearchBox is null) return;
+        var compact = e.NewSize.Width < 720;
+        SearchColumn.Width = compact ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
+        Grid.SetRow(ArchiveSearchBox, compact ? 1 : 0);
+        Grid.SetColumn(ArchiveSearchBox, compact ? 0 : 2);
+        Grid.SetColumnSpan(ArchiveSearchBox, compact ? 4 : 1);
+        ArchiveSearchBox.MaxWidth = compact ? double.PositiveInfinity : 250;
+        ArchiveSearchBox.Margin = compact ? new Thickness(0, 0, 0, 10) : new Thickness(12, 0, 12, 0);
+    }
+
     private void OnArchiveTitleDragStart(object sender, MouseButtonEventArgs e)
     {
         _archiveTitleDragOrigin = !_viewModel.IsBusy && !_exportingDrag && _viewModel.HasArchive && e.ClickCount == 1

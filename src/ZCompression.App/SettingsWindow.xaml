@@ -146,7 +146,7 @@
                         <Separator Background="{DynamicResource BorderBrush}" />
                         <Image Source="/Assets/icon.png" Width="58" Height="58" HorizontalAlignment="Left" Margin="0,24,0,12"/>
                         <TextBlock Text="z_compression" FontSize="20" FontWeight="SemiBold" />
-                        <TextBlock Text="Version 1.1.8 · MIT License" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0" />
+                        <TextBlock Text="Version 1.1.9 · MIT License" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0" />
                         <TextBlock Text="{local:Loc PrivacyStatement}" Margin="0,24,0,0" />
                         <Button Style="{StaticResource AccentButton}" Content="☕  Buy Me a Coffee" HorizontalAlignment="Left" Margin="0,22,0,0" Click="OnDonate" />
                     </StackPanel>
