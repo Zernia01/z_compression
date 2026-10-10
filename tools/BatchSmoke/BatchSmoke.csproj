@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0-windows</TargetFramework><UseWPF>true</UseWPF><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/ZCompression.App/ZCompression.App.csproj" />
+    <Compile Include="../../src/ZCompression.App/ShellSelectionCollector.cs" Link="ShellSelectionCollector.cs" />
+  </ItemGroup>
+</Project>

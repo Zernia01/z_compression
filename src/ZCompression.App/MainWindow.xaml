@@ -51,6 +51,9 @@
                     <Button Style="{StaticResource NavButton}" Click="OnExtract">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="🗜️" FontFamily="Segoe UI Emoji" FontSize="15" Width="28" /><TextBlock Text="{local:Loc Extract}" VerticalAlignment="Center" /></StackPanel>
                     </Button>
+                    <Button Style="{StaticResource NavButton}" Click="OnExtractMany">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="🗜️" FontFamily="Segoe UI Emoji" FontSize="15" Width="28" /><TextBlock Text="{local:Loc ExtractMany}" VerticalAlignment="Center" /></StackPanel>
+                    </Button>
                     <Button Style="{StaticResource NavButton}" Click="OnOpen">
                         <StackPanel Orientation="Horizontal"><TextBlock Text="📂" FontFamily="Segoe UI Emoji" FontSize="15" Width="28" /><TextBlock Text="{local:Loc OpenArchive}" VerticalAlignment="Center" /></StackPanel>
                     </Button>

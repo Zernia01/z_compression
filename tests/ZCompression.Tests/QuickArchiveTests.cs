@@ -7,6 +7,30 @@ namespace ZCompression.Tests;
 public sealed class QuickArchiveTests
 {
     [TestMethod]
+    public async Task QuickCompression_MultipleSelectedFoldersBecomeOneArchive()
+    {
+        var root = TemporaryDirectory();
+        try
+        {
+            var folders = new[] { "첫 번째 폴더", "second folder" }.Select(name => Directory.CreateDirectory(Path.Combine(root, name)).FullName).ToArray();
+            foreach (var folder in folders) await File.WriteAllTextAsync(Path.Combine(folder, "same.txt"), Path.GetFileName(folder));
+            var engine = new SharpCompressArchiveEngine();
+            var archive = await new QuickArchiveService(engine).CompressAsync([.. folders, folders[0]]);
+            var entries = await engine.ListAsync(archive);
+            foreach (var folder in folders)
+            {
+                var entry = entries.Single(item => item.Path.Replace('\\', '/').EndsWith(Path.GetFileName(folder) + "/same.txt", StringComparison.Ordinal));
+                var destination = Path.Combine(root, Path.GetFileName(folder) + "-preview.txt");
+                await engine.ExtractEntryAsync(archive, entry.Path, destination);
+                Assert.AreEqual(Path.GetFileName(folder), await File.ReadAllTextAsync(destination));
+            }
+            Assert.HasCount(2, entries.Where(entry => !entry.IsDirectory).ToArray());
+            Assert.HasCount(1, Directory.GetFiles(root, "*.zip"));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [TestMethod]
     [DataRow(ArchiveFormat.Zip)]
     [DataRow(ArchiveFormat.SevenZip)]
     [DataRow(ArchiveFormat.TarGZip)]

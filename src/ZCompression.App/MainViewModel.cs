@@ -147,6 +147,30 @@ public sealed class MainViewModel : INotifyPropertyChanged
         await WithArchivePassword(archive, password => new QuickArchiveService(_engine).ExtractAsync(archive, password, CreateProgress(), token));
         Status = _localization["ExtractionComplete"];
     });
+
+    public async Task ExtractManyAsync(IReadOnlyList<string> archives, string? destination = null) => await WithOperation(async token =>
+    {
+        var paths = archives.Select(Path.GetFullPath).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        if (paths.Length == 0 || paths.Any(path => !File.Exists(path) || !IsArchivePath(path))) throw new InvalidDataException("Select supported archives.");
+        IProgress<ArchiveProgress> progress = CreateProgress();
+        for (var index = 0; index < paths.Length; index++)
+        {
+            token.ThrowIfCancellationRequested();
+            var archive = paths[index];
+            Status = $"{_localization["Extracting"]} ({index + 1}/{paths.Length}) · {Path.GetFileName(archive)}";
+            var position = index;
+            var batchProgress = new InlineProgress<ArchiveProgress>(value => progress.Report(value with
+            {
+                Percent = (position * 100d + value.Percent) / paths.Length,
+                CurrentFile = $"[{position + 1}/{paths.Length}] {Path.GetFileName(archive)} · {value.CurrentFile}"
+            }));
+            await WithArchivePassword(archive, password => new QuickArchiveService(_engine).ExtractAsync(archive, password, batchProgress, token, destination));
+        }
+        ProgressPercent = 100;
+        Status = _localization["ExtractionComplete"];
+    });
+
+    private sealed class InlineProgress<T>(Action<T> report) : IProgress<T> { public void Report(T value) => report(value); }
     public void ClearArchive()
     {
         _archivePasswords.Clear();

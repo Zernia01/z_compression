@@ -28,10 +28,11 @@ public sealed class QuickArchiveService(IArchiveEngine engine)
     }
 
     public async Task<string> ExtractAsync(string archivePath, string? password = null,
-        IProgress<ArchiveProgress>? progress = null, CancellationToken cancellationToken = default)
+        IProgress<ArchiveProgress>? progress = null, CancellationToken cancellationToken = default, string? destinationDirectory = null)
     {
         var archive = Path.GetFullPath(archivePath);
-        var parent = Path.GetDirectoryName(archive)!;
+        var parent = destinationDirectory is null ? Path.GetDirectoryName(archive)! : Path.GetFullPath(destinationDirectory);
+        Directory.CreateDirectory(parent);
         var name = GetExtractionFolderName(archive);
         var staging = Path.Combine(parent, $".z-compression-{Guid.NewGuid():N}.extract");
         try

@@ -10,14 +10,20 @@ namespace ZCompression.App;
 
 internal static class UpdateCoordinator
 {
+    private static readonly HttpClient Client = new(new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromSeconds(5), PooledConnectionLifetime = TimeSpan.FromMinutes(5) }) { Timeout = TimeSpan.FromMinutes(10) };
+    private static bool _running;
     internal static async Task CheckAndInstallAsync(Window owner, bool showUpToDateMessage)
     {
+        if (_running) return;
+        _running = true;
+        var progressWindow = new UpdateProgressWindow(owner);
+        if (showUpToDateMessage) progressWindow.Show();
+        var token = progressWindow.Cancellation.Token;
         try
         {
             var currentVersion = Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(1, 0, 0);
-            using var httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
-            var service = new GitHubUpdateService(httpClient, GitHubUpdateService.DefaultOwner, GitHubUpdateService.DefaultRepository);
-            var result = await service.CheckAsync(currentVersion);
+            var service = new GitHubUpdateService(Client, GitHubUpdateService.DefaultOwner, GitHubUpdateService.DefaultRepository);
+            var result = await service.CheckAsync(currentVersion, token);
             if (!result.IsUpdateAvailable)
             {
                 if (showUpToDateMessage)
@@ -31,13 +37,17 @@ internal static class UpdateCoordinator
             if (MessageBox.Show(owner, prompt, LocalizationManager.Instance["AutomaticUpdates"], MessageBoxButton.YesNo, MessageBoxImage.Information, MessageBoxResult.Yes) != MessageBoxResult.Yes)
                 return;
 
+            if (!progressWindow.IsVisible) progressWindow.Show();
+            progressWindow.Report(0);
+
             var stagingRoot = Path.Combine(Path.GetTempPath(), "z_compression", "update", Guid.NewGuid().ToString("N"));
             var downloadDirectory = Path.Combine(stagingRoot, "download");
             var packageDirectory = Path.Combine(stagingRoot, "package");
             var runnerDirectory = Path.Combine(stagingRoot, "runner");
-            var archivePath = await service.DownloadAndVerifyAsync(result.Manifest, downloadDirectory);
+            var archivePath = await service.DownloadAndVerifyAsync(result.Manifest, downloadDirectory, new Progress<double>(progressWindow.Report), token);
+            progressWindow.SetStage("PreparingUpdate");
             Directory.CreateDirectory(packageDirectory);
-            ZipFile.ExtractToDirectory(archivePath, packageDirectory, overwriteFiles: true);
+            await Task.Run(() => { token.ThrowIfCancellationRequested(); ZipFile.ExtractToDirectory(archivePath, packageDirectory, overwriteFiles: true); token.ThrowIfCancellationRequested(); }, token);
 
             var updaterName = "ZCompression.Updater.exe";
             var packagedUpdater = Path.Combine(packageDirectory, updaterName);
@@ -55,10 +65,12 @@ internal static class UpdateCoordinator
             Process.Start(startInfo);
             Application.Current.Shutdown();
         }
+        catch (OperationCanceledException) { }
         catch (Exception exception)
         {
             if (showUpToDateMessage)
                 MessageBox.Show(owner, $"{LocalizationManager.Instance["UpdateFailed"]}\n{exception.Message}", LocalizationManager.Instance["AutomaticUpdates"], MessageBoxButton.OK, MessageBoxImage.Error);
         }
+        finally { progressWindow.Close(); progressWindow.Cancellation.Dispose(); _running = false; }
     }
 }

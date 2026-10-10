@@ -93,7 +93,7 @@ internal static class FileAssociationService
         using var key = Registry.CurrentUser.CreateSubKey(path);
         registration.SetValue(key, "MUIVerb", label, RegistryValueKind.String);
         registration.SetValue(key, "Icon", $"\"{executable}\",0", RegistryValueKind.String);
-        registration.SetValue(key, "MultiSelectModel", "Single", RegistryValueKind.String);
+        registration.SetValue(key, "MultiSelectModel", "Player", RegistryValueKind.String);
         registration.SetDefaultValue($@"{path}\command", $"\"{executable}\" {argument} \"%1\"");
     }
 

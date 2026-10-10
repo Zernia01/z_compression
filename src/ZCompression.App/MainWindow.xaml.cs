@@ -42,6 +42,19 @@ public partial class MainWindow : Window
 
     private async void OnExtract(object sender, RoutedEventArgs e) => await ExtractArchiveAsync();
 
+    private async void OnExtractMany(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.IsBusy) return;
+        var dialog = ArchiveOpenDialog();
+        dialog.Multiselect = true;
+        dialog.Title = LocalizationManager.Instance["ExtractMany"];
+        if (dialog.ShowDialog(this) != true) return;
+        var destination = SelectFolder(LocalizationManager.Instance["SelectExtractionDestination"]);
+        if (destination is not null)
+            await RunWithProgressAsync(LocalizationManager.Instance["ExtractMany"], $"{dialog.FileNames.Length}", true,
+                () => _viewModel.ExtractManyAsync(dialog.FileNames, destination));
+    }
+
     private async Task ExtractArchiveAsync()
     {
         var archivePath = _viewModel.CurrentArchivePath;
@@ -82,6 +95,11 @@ public partial class MainWindow : Window
         if (e.Data.GetDataPresent(ArchiveDragFormat)) { e.Handled = true; e.Effects = DragDropEffects.None; return; }
         if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
         var paths = (string[])e.Data.GetData(DataFormats.FileDrop);
+        if (!_viewModel.HasArchive && paths.Length > 1 && paths.All(MainViewModel.IsArchivePath))
+        {
+            await RunWithProgressAsync(LocalizationManager.Instance["ExtractMany"], $"{paths.Length}", true, () => _viewModel.ExtractManyAsync(paths));
+            return;
+        }
         if (_viewModel.HasArchive) await AddToOpenArchiveAsync(paths);
         else if (paths.Length == 1 && MainViewModel.IsArchivePath(paths[0])) await RunUiAction(() => _viewModel.OpenArchiveAsync(paths[0]));
         else

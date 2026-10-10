@@ -107,6 +107,12 @@ On Windows 11, the Explorer compression command may appear under `Show more opti
 
 Generative AI tools, including OpenAI ChatGPT and Codex, were used as assistants during parts of this project's development and documentation. AI-generated suggestions and content were reviewed and edited by the project author before being incorporated.
 
+## 여러 항목 압축·일괄 압축 풀기 (1.2.2)
+
+탐색기에서 여러 폴더·파일을 선택해 우클릭하면 `z_compression으로 바로 압축`을 사용할 수 있습니다. 선택한 항목을 하나의 압축 파일로 만듭니다. 여러 압축 파일을 선택해 `z_compression으로 폴더에 풀기`를 누르면 각각 원본 압축 파일 옆에 이름별 폴더를 만들어 순서대로 압축 해제합니다. 앱 왼쪽의 `여러 압축 풀기`에서는 파일들을 선택하고 공통 출력 위치를 지정할 수 있습니다. 같은 이름의 결과 폴더는 `(2)`, `(3)`을 붙여 보존하며, 전체 작업은 한 진행 창에서 확인·중지할 수 있습니다. 암호가 필요한 파일은 개별적으로 암호를 요청합니다.
+
+업데이트 확인은 최신 manifest를 직접 요청하며, 확인·다운로드·설치 준비 상태와 취소 버튼을 표시합니다. 패키지 압축 해제는 UI 스레드 밖에서 실행하고 SHA-256 검증을 유지합니다.
+
 ## 사각형으로 선택해 꺼내기 (1.2.1)
 
 압축 파일 목록의 빈 공간에서 마우스 왼쪽 버튼을 누르고 끌면 사각형 범위에 들어오는 파일·폴더가 함께 선택됩니다. 버튼을 놓고 선택된 항목 하나를 바탕화면이나 탐색기 폴더로 끌어놓으면 선택한 항목 전체를 그 위치에 압축 해제합니다. Ctrl을 누르고 사각형을 그리면 기존 선택에 추가하며, Esc로 진행 중인 사각형 선택을 취소할 수 있습니다. 압축 해제 진행은 프로그램의 진행 창에서 표시됩니다.

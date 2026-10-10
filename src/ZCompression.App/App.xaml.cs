@@ -14,6 +14,18 @@ public partial class App : Application
 
     private async void OnStartup(object sender, StartupEventArgs e)
     {
+        var args = e.Args;
+        if (args.FirstOrDefault() is "--compress-here" or "--extract-here")
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            try
+            {
+                var collected = await ShellSelectionCollector.CollectAsync(args[0], args.Skip(1).ToArray());
+                if (collected is null) { Shutdown(); return; }
+                args = [args[0], .. collected];
+            }
+            catch (Exception exception) { MessageBox.Show(exception.Message, "z_compression"); Shutdown(1); return; }
+        }
         CleanupOldPreviews();
         var settingsService = new JsonSettingsService();
         var settings = await settingsService.LoadAsync();
@@ -38,7 +50,7 @@ public partial class App : Application
         if (command?.Equals("--compress-here", StringComparison.OrdinalIgnoreCase) == true ||
             command?.Equals("--extract-here", StringComparison.OrdinalIgnoreCase) == true)
         {
-            await RunQuickOperationAsync(viewModel, e.Args, command.Equals("--extract-here", StringComparison.OrdinalIgnoreCase));
+            await RunQuickOperationAsync(viewModel, args, command.Equals("--extract-here", StringComparison.OrdinalIgnoreCase));
             return;
         }
         var mainWindow = new MainWindow(viewModel);
@@ -83,8 +95,7 @@ public partial class App : Application
         {
             if (extract)
             {
-                if (sources.Length != 1 || !MainViewModel.IsArchivePath(sources[0])) throw new InvalidDataException("Select one supported archive.");
-                await viewModel.QuickExtractAsync(sources[0]);
+                await viewModel.ExtractManyAsync(sources);
             }
             else await viewModel.QuickCompressAsync(sources);
         }
