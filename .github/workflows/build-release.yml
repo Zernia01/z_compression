@@ -28,6 +28,8 @@ jobs:
         run: dotnet run --project tools/VirtualDragSmoke -c Release
       - name: Verify saved compression defaults and archive UI
         run: dotnet run --project tools/DefaultsSmoke -c Release
+      - name: Verify archive rectangle selection
+        run: dotnet run --project tools/MarqueeSmoke -c Release
       - run: dotnet publish src/ZCompression.App/ZCompression.App.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -o artifacts/${{ matrix.rid }}
       - run: dotnet publish src/ZCompression.Updater/ZCompression.Updater.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -o artifacts/updater-${{ matrix.rid }}
       - shell: pwsh

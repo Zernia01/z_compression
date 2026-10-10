@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContext = _viewModel = viewModel;
+        _ = new ArchiveMarqueeSelection(ArchiveGrid, () => !_viewModel.IsBusy && !_exportingDrag);
         _viewModel.RequestArchivePassword = path =>
         {
             var dialog = new ArchivePasswordWindow(path) { Owner = this };

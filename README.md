@@ -107,6 +107,10 @@ On Windows 11, the Explorer compression command may appear under `Show more opti
 
 Generative AI tools, including OpenAI ChatGPT and Codex, were used as assistants during parts of this project's development and documentation. AI-generated suggestions and content were reviewed and edited by the project author before being incorporated.
 
+## 사각형으로 선택해 꺼내기 (1.2.1)
+
+압축 파일 목록의 빈 공간에서 마우스 왼쪽 버튼을 누르고 끌면 사각형 범위에 들어오는 파일·폴더가 함께 선택됩니다. 버튼을 놓고 선택된 항목 하나를 바탕화면이나 탐색기 폴더로 끌어놓으면 선택한 항목 전체를 그 위치에 압축 해제합니다. Ctrl을 누르고 사각형을 그리면 기존 선택에 추가하며, Esc로 진행 중인 사각형 선택을 취소할 수 있습니다. 압축 해제 진행은 프로그램의 진행 창에서 표시됩니다.
+
 ## 기본 압축 설정 (1.2.0)
 
 설정의 **기본 설정**에서 기본 압축 형식과 압축 수준을 선택할 수 있습니다. 저장한 수준은 새 압축 창의 초기 선택, 탐색기에서 바로 압축, 기존 압축에 파일 추가에 적용되며 다시 실행해도 유지됩니다. 압축 안 함·매우 빠름·빠름·보통·높음·최고의 6단계를 지원합니다. 새 압축 창에서 이번 작업의 수준을 바꾸어도 저장된 기본값은 바뀌지 않습니다.
