@@ -5,6 +5,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using ZCompression.Core.Settings;
+using ZCompression.Core.Archives;
 
 namespace ZCompression.App;
 
@@ -18,6 +19,8 @@ public partial class SettingsWindow : Window
     {
         InitializeComponent();
         _viewModel = viewModel;
+        SelectTag(DefaultLevelBox, viewModel.Settings.GetDefaultCompressionLevel().ToString());
+        SelectTag(DefaultFormatBox, viewModel.Settings.GetDefaultArchiveFormat().ToString());
         AddHandler(Keyboard.PreviewKeyDownEvent, new KeyEventHandler(OnShortcutKeyDown), true);
         SelectTag(LanguageBox, viewModel.Settings.Language);
         SelectTheme(viewModel.Settings.Theme);
@@ -31,17 +34,30 @@ public partial class SettingsWindow : Window
     {
         if (sender is not Button { CommandParameter: string category }) return;
         GeneralPanel.Visibility = category == "general" ? Visibility.Visible : Visibility.Collapsed;
+        DefaultsPanel.Visibility = category == "defaults" ? Visibility.Visible : Visibility.Collapsed;
         ShortcutsPanel.Visibility = category == "shortcuts" ? Visibility.Visible : Visibility.Collapsed;
         AppearancePanel.Visibility = category == "appearance" ? Visibility.Visible : Visibility.Collapsed;
         PerformancePanel.Visibility = category == "performance" ? Visibility.Visible : Visibility.Collapsed;
         AboutPanel.Visibility = category == "about" ? Visibility.Visible : Visibility.Collapsed;
-        foreach (var button in new[] { GeneralNav, ShortcutsNav, AppearanceNav, PerformanceNav, AboutNav }) button.Tag = null;
+        foreach (var button in new[] { GeneralNav, DefaultsNav, ShortcutsNav, AppearanceNav, PerformanceNav, AboutNav }) button.Tag = null;
         ((Button)sender).Tag = "Selected";
     }
 
     private void OnLanguageChanged(object sender, SelectionChangedEventArgs e)
     {
         if (LanguageBox.SelectedItem is ComboBoxItem { Tag: string tag }) _viewModel.SetLanguage(tag);
+    }
+
+    private void OnDefaultLevelChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_viewModel is not null && DefaultLevelBox.SelectedItem is ComboBoxItem { Tag: string tag } && Enum.TryParse<CompressionPreset>(tag, out var level))
+            _viewModel.SetDefaultCompressionLevel(level);
+    }
+
+    private void OnDefaultFormatChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_viewModel is not null && DefaultFormatBox.SelectedItem is ComboBoxItem { Tag: string tag } && Enum.TryParse<ArchiveFormat>(tag, out var format))
+            _viewModel.SetDefaultArchiveFormat(format);
     }
 
     private void OnThemeChanged(object sender, RoutedEventArgs e)

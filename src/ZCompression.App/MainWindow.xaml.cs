@@ -58,7 +58,7 @@ public partial class MainWindow : Window
 
     public async Task CreateArchiveFromSourcesAsync(IEnumerable<string>? initialSources = null)
     {
-        var dialog = new NewArchiveWindow(initialSources) { Owner = this };
+        var dialog = new NewArchiveWindow(initialSources, _viewModel.Settings) { Owner = this };
         if (dialog.ShowDialog() == true)
             await RunWithProgressAsync(LocalizationManager.Instance["CompressAction"], Path.GetFileName(dialog.DestinationPath), false,
                 () => _viewModel.CompressAsync(dialog.SelectedSources, dialog.DestinationPath, dialog.SelectedFormat, dialog.SelectedLevel, dialog.SelectedPassword));

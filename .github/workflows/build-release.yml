@@ -26,6 +26,8 @@ jobs:
       - run: dotnet test tests/ZCompression.Tests/ZCompression.Tests.csproj -c Release --no-build
       - name: Verify app-owned drop cancellation and native archive streams
         run: dotnet run --project tools/VirtualDragSmoke -c Release
+      - name: Verify saved compression defaults and archive UI
+        run: dotnet run --project tools/DefaultsSmoke -c Release
       - run: dotnet publish src/ZCompression.App/ZCompression.App.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -o artifacts/${{ matrix.rid }}
       - run: dotnet publish src/ZCompression.Updater/ZCompression.Updater.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:PublishSingleFile=true -o artifacts/updater-${{ matrix.rid }}
       - shell: pwsh

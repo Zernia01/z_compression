@@ -107,6 +107,12 @@ On Windows 11, the Explorer compression command may appear under `Show more opti
 
 Generative AI tools, including OpenAI ChatGPT and Codex, were used as assistants during parts of this project's development and documentation. AI-generated suggestions and content were reviewed and edited by the project author before being incorporated.
 
+## 기본 압축 설정 (1.2.0)
+
+설정의 **기본 설정**에서 기본 압축 형식과 압축 수준을 선택할 수 있습니다. 저장한 수준은 새 압축 창의 초기 선택, 탐색기에서 바로 압축, 기존 압축에 파일 추가에 적용되며 다시 실행해도 유지됩니다. 압축 안 함·매우 빠름·빠름·보통·높음·최고의 6단계를 지원합니다. 새 압축 창에서 이번 작업의 수준을 바꾸어도 저장된 기본값은 바뀌지 않습니다.
+
+In **Settings → Defaults**, choose the default archive format and compression level. Saved defaults initialize new archive dialogs and apply to quick compression and archive updates. Per-operation overrides do not change saved defaults.
+
 ## Privacy and license
 
 Settings are stored as UTF-8 JSON under `%LOCALAPPDATA%\z_compression`. Update checks only contact this repository's GitHub Releases API. Downloaded update packages must match the manifest size and SHA-256 hash before installation.

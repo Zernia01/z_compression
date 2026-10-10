@@ -90,10 +90,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
         CurrentArchivePath = Path.GetFullPath(path); CurrentArchive = Path.GetFileName(path); CurrentFolder = ""; SelectedEntry = null; SelectedBrowserItem = null; RebuildBrowserItems(); Status = string.Format(_localization["EntryCount"], entries.Count);
     });
 
-    public async Task CompressAsync(IReadOnlyList<string> sources, string destination, ArchiveFormat format, CompressionPreset level = CompressionPreset.Normal, string? password = null) => await WithOperation(async token =>
+    public async Task CompressAsync(IReadOnlyList<string> sources, string destination, ArchiveFormat format, CompressionPreset? level = null, string? password = null) => await WithOperation(async token =>
     {
         Status = _localization["Compressing"];
-        await _engine.CompressAsync(new CompressionRequest(sources, destination, format, level, password), CreateProgress(), token);
+        await _engine.CompressAsync(new CompressionRequest(sources, destination, format, level ?? Settings.GetDefaultCompressionLevel(), password), CreateProgress(), token);
         var entries = await _engine.ListAsync(destination, password, cancellationToken: token);
         var fullPath = Path.GetFullPath(destination);
         _archivePasswords.Remove(fullPath);
@@ -116,7 +116,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         if (string.IsNullOrWhiteSpace(CurrentArchivePath)) throw new InvalidOperationException("No archive is open.");
         Status = _localization["Compressing"];
         var format = FormatFromPath(CurrentArchivePath);
-        await WithArchivePassword(CurrentArchivePath, password => _engine.UpdateAsync(new ArchiveUpdateRequest(CurrentArchivePath, sources, format, CurrentFolder, CompressionPreset.High, password), CreateProgress(), token));
+        await WithArchivePassword(CurrentArchivePath, password => _engine.UpdateAsync(new ArchiveUpdateRequest(CurrentArchivePath, sources, format, CurrentFolder, Settings.GetDefaultCompressionLevel(), password), CreateProgress(), token));
         var entries = await WithArchivePassword(CurrentArchivePath, password => _engine.ListAsync(CurrentArchivePath, password, cancellationToken: token));
         Entries.ReplaceAll(entries);
         SelectedEntry = null; SelectedBrowserItem = null; RebuildBrowserItems();
@@ -135,12 +135,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public async Task QuickCompressAsync(IReadOnlyList<string> sources) => await WithOperation(async token =>
     {
         Status = _localization["Compressing"];
-        var format = Settings.DefaultArchiveFormat.ToLowerInvariant() switch
-        {
-            "7z" or "sevenzip" => ArchiveFormat.SevenZip, "rar" => ArchiveFormat.Rar,
-            "tar" => ArchiveFormat.Tar, "tar.gz" or "targzip" => ArchiveFormat.TarGZip, _ => ArchiveFormat.Zip,
-        };
-        var level = Enum.TryParse<CompressionPreset>(Settings.DefaultCompressionLevel, true, out var preset) ? preset : CompressionPreset.High;
+        var format = Settings.GetDefaultArchiveFormat();
+        var level = Settings.GetDefaultCompressionLevel();
         await new QuickArchiveService(_engine).CompressAsync(sources, format, level, CreateProgress(), token);
         Status = _localization["CompressionComplete"];
     });
@@ -230,6 +226,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             .Contains(extension, StringComparer.OrdinalIgnoreCase);
     }
     public void SetLanguage(string language) { Settings = Settings with { Language = language }; _localization.SetCulture(language); }
+    public void SetDefaultCompressionLevel(CompressionPreset level) => Settings = Settings with { DefaultCompressionLevel = level.ToString().ToLowerInvariant() };
+    public void SetDefaultArchiveFormat(ArchiveFormat format) => Settings = Settings with { DefaultArchiveFormat = format.ToString().ToLowerInvariant() };
     public void SetTheme(string theme) => Settings = Settings with { Theme = theme };
     public void SetCpuThreads(int threads) => Settings = Settings with { CpuThreads = Math.Max(0, threads) };
     public void SetOperationPriority(string priority) => Settings = Settings with { OperationPriority = priority };

@@ -44,6 +44,9 @@
                         <Button x:Name="ShortcutsNav" Style="{StaticResource SettingsNav}" CommandParameter="shortcuts" Click="OnCategoryChanged">
                             <StackPanel Orientation="Horizontal"><TextBlock Text="⌨️" FontFamily="Segoe UI Emoji" Width="28" FontSize="15"/><TextBlock Text="{local:Loc Shortcuts}"/></StackPanel>
                         </Button>
+                        <Button x:Name="DefaultsNav" Style="{StaticResource SettingsNav}" CommandParameter="defaults" Click="OnCategoryChanged">
+                            <StackPanel Orientation="Horizontal"><TextBlock Text="📦" FontFamily="Segoe UI Emoji" Width="28" FontSize="15"/><TextBlock Text="{local:Loc DefaultSettings}"/></StackPanel>
+                        </Button>
                         <Button x:Name="AppearanceNav" Style="{StaticResource SettingsNav}" Tag="Selected" CommandParameter="appearance" Click="OnCategoryChanged">
                             <StackPanel Orientation="Horizontal"><TextBlock Text="🎨" FontFamily="Segoe UI Emoji" Width="28" FontSize="15"/><TextBlock Text="{local:Loc Appearance}"/></StackPanel>
                         </Button>
@@ -72,8 +75,6 @@
                             <ComboBoxItem Tag="en-US">English</ComboBoxItem><ComboBoxItem Tag="ja-JP">日本語</ComboBoxItem>
                             <ComboBoxItem Tag="zh-CN">简体中文</ComboBoxItem><ComboBoxItem Tag="zh-TW">繁體中文</ComboBoxItem><ComboBoxItem Tag="ko-Hanja">國漢文混用文</ComboBoxItem>
                         </ComboBox>
-                        <TextBlock Text="{local:Loc DefaultFormat}" FontWeight="SemiBold" Margin="0,24,0,8" />
-                        <ComboBox Width="280" HorizontalAlignment="Left" SelectedIndex="0"><ComboBoxItem>ZIP</ComboBoxItem><ComboBoxItem>7Z</ComboBoxItem><ComboBoxItem>TAR.GZ</ComboBoxItem></ComboBox>
                         <Grid Margin="0,24,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                             <StackPanel><TextBlock Text="{local:Loc WindowsDefaultApps}" FontWeight="SemiBold"/><TextBlock Text="{local:Loc WindowsDefaultAppsDescription}" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,12,0"/></StackPanel>
                             <Button Grid.Column="1" Style="{StaticResource OutlineButton}" Content="{local:Loc SetDefaultApp}" Click="OnSetDefaultApps" VerticalAlignment="Center"/>
@@ -84,6 +85,22 @@
                         </Grid>
                         <Button Style="{StaticResource OutlineButton}" Content="{local:Loc CheckForUpdatesNow}" HorizontalAlignment="Left" Margin="0,14,0,0" Click="OnCheckForUpdates" />
                         <CheckBox Content="{local:Loc NotifyWhenComplete}" Margin="0,20,0,0" IsChecked="True" />
+                    </StackPanel>
+
+                    <StackPanel x:Name="DefaultsPanel" Visibility="Collapsed">
+                        <TextBlock Text="{local:Loc DefaultSettings}" FontSize="23" FontWeight="SemiBold" />
+                        <TextBlock Text="{local:Loc DefaultSettingsDescription}" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap" Margin="0,7,0,26" />
+                        <Separator Background="{DynamicResource BorderBrush}" />
+                        <TextBlock Text="{local:Loc DefaultFormat}" FontWeight="SemiBold" Margin="0,22,0,8" />
+                        <ComboBox x:Name="DefaultFormatBox" Width="280" HorizontalAlignment="Left" SelectionChanged="OnDefaultFormatChanged">
+                            <ComboBoxItem Tag="Zip">ZIP</ComboBoxItem><ComboBoxItem Tag="SevenZip">7Z</ComboBoxItem><ComboBoxItem Tag="Tar">TAR</ComboBoxItem><ComboBoxItem Tag="TarGZip">TAR.GZ</ComboBoxItem><ComboBoxItem Tag="Rar">RAR</ComboBoxItem>
+                        </ComboBox>
+                        <TextBlock Text="{local:Loc DefaultCompressionLevel}" FontWeight="SemiBold" Margin="0,24,0,8" />
+                        <ComboBox x:Name="DefaultLevelBox" Width="280" HorizontalAlignment="Left" SelectionChanged="OnDefaultLevelChanged">
+                            <ComboBoxItem Tag="Store" Content="{local:Loc StoreOnly}"/><ComboBoxItem Tag="Fastest" Content="{local:Loc Fastest}"/>
+                            <ComboBoxItem Tag="Fast" Content="{local:Loc Fast}"/><ComboBoxItem Tag="Normal" Content="{local:Loc Normal}"/>
+                            <ComboBoxItem Tag="High" Content="{local:Loc High}"/><ComboBoxItem Tag="Ultra" Content="{local:Loc Ultra}"/>
+                        </ComboBox>
                     </StackPanel>
 
                     <StackPanel x:Name="ShortcutsPanel" Visibility="Collapsed">
@@ -146,7 +163,7 @@
                         <Separator Background="{DynamicResource BorderBrush}" />
                         <Image Source="/Assets/icon.png" Width="58" Height="58" HorizontalAlignment="Left" Margin="0,24,0,12"/>
                         <TextBlock Text="z_compression" FontSize="20" FontWeight="SemiBold" />
-                        <TextBlock Text="Version 1.1.9 · MIT License" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0" />
+                        <TextBlock Text="Version 1.2.0 · MIT License" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0" />
                         <TextBlock Text="{local:Loc PrivacyStatement}" Margin="0,24,0,0" />
                         <Button Style="{StaticResource AccentButton}" Content="☕  Buy Me a Coffee" HorizontalAlignment="Left" Margin="0,22,0,0" Click="OnDonate" />
                     </StackPanel>

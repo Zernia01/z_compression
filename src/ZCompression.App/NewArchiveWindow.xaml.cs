@@ -5,17 +5,23 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using ZCompression.Core.Archives;
+using ZCompression.Core.Settings;
 
 namespace ZCompression.App;
 
 public partial class NewArchiveWindow : Window, INotifyPropertyChanged
 {
-    public NewArchiveWindow(IEnumerable<string>? initialSources = null)
+    public NewArchiveWindow(IEnumerable<string>? initialSources = null, AppSettings? settings = null)
     {
         InitializeComponent();
         DataContext = this;
         LocationBox.Text = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
         FileNameBox.Text = LocalizationManager.Instance["DefaultArchiveName"];
+        settings ??= new AppSettings();
+        SelectedLevel = settings.GetDefaultCompressionLevel();
+        SelectedFormat = settings.GetDefaultArchiveFormat();
+        LevelBox.SelectedItem = LevelBox.Items.Cast<ComboBoxItem>().First(item => Equals(item.Tag, SelectedLevel.ToString()));
+        FormatBox.SelectedItem = FormatBox.Items.Cast<ComboBoxItem>().First(item => Equals(item.Tag, SelectedFormat.ToString()));
         Sources.CollectionChanged += (_, _) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SourceCountText)));
         if (initialSources is not null) AddSources(initialSources);
     }
@@ -92,7 +98,7 @@ public partial class NewArchiveWindow : Window, INotifyPropertyChanged
             var size = isDirectory ? 0 : new FileInfo(path).Length;
             Sources.Add(new CompressionSourceItem(path, Path.GetFileName(path.TrimEnd(Path.DirectorySeparatorChar)), isDirectory, size));
         }
-        if (Sources.Count == 1 && FileNameBox.Text == LocalizationManager.Instance["DefaultArchiveName"]) FileNameBox.Text = StripArchiveExtension(Sources[0].Name) + CurrentExtension();
+        if (Sources.Count == 1 && StripArchiveExtension(FileNameBox.Text) == StripArchiveExtension(LocalizationManager.Instance["DefaultArchiveName"])) FileNameBox.Text = StripArchiveExtension(Sources[0].Name) + CurrentExtension();
     }
 
     private string CurrentExtension() => FormatBox.SelectedItem is ComboBoxItem { Tag: string tag } ? tag switch { "Rar" => ".rar", "SevenZip" => ".7z", "Tar" => ".tar", "TarGZip" => ".tar.gz", _ => ".zip" } : ".zip";

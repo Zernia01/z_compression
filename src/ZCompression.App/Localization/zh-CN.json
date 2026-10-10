@@ -9,4 +9,4 @@
 ,"ShellExtractNow":"使用 z_compression 解压到文件夹","ShellCompressNow":"使用 z_compression 立即压缩"
 ,"ExplorerShortcutHint":"字母和数字会立即同步到资源管理器菜单。Ctrl/Alt/Shift 组合在菜单中使用最后的字符键。功能键和符号键仅在应用内有效。Delete 同时清除菜单快捷键。","ShortcutSyncFailed":"无法保存快捷键或更新菜单，请检查权限后重试。",
   "ArchiveTitleDragHint":"拖出此标题，将整个压缩包解压到同名文件夹。"
-,"DropFolderUnsupported":"请拖到桌面、资源管理器文件夹的空白处或文件夹项目上。无法确认此位置的路径。","DropOverwriteConfirm":"已有 {0:N0} 个同名文件。是否覆盖？"}
+,"DropFolderUnsupported":"请拖到桌面、资源管理器文件夹的空白处或文件夹项目上。无法确认此位置的路径。","DropOverwriteConfirm":"已有 {0:N0} 个同名文件。是否覆盖？","DefaultSettingsDescription":"选择新建压缩文件和快速压缩的默认格式与压缩级别。","DefaultCompressionLevel":"默认压缩级别","DefaultSettings":"默认设置"}

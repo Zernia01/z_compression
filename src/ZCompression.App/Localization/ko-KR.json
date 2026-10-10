@@ -9,4 +9,4 @@
 ,"ShellExtractNow":"z_compression으로 폴더에 풀기","ShellCompressNow":"z_compression으로 바로 압축"
 ,"ExplorerShortcutHint":"문자·숫자 키는 탐색기 메뉴에도 즉시 반영됩니다. Ctrl/Alt/Shift 조합은 메뉴에서 마지막 문자 키로 사용합니다. 기능·기호 키는 앱 안에서만 동작합니다. Delete로 해제하면 메뉴 키도 해제됩니다.","ShortcutSyncFailed":"단축키 저장 또는 탐색기 메뉴 갱신에 실패했습니다. 권한을 확인하고 다시 시도하세요.",
   "ArchiveTitleDragHint":"제목을 밖으로 끌면 압축 파일 전체를 이름의 폴더에 풉니다."
-,"DropFolderUnsupported":"바탕화면, 탐색기 폴더의 빈 공간 또는 폴더 항목에 놓아 주세요. 이 위치의 폴더 경로를 확인할 수 없습니다.","DropOverwriteConfirm":"같은 이름의 파일 {0:N0}개가 있습니다. 덮어쓰시겠습니까?"}
+,"DropFolderUnsupported":"바탕화면, 탐색기 폴더의 빈 공간 또는 폴더 항목에 놓아 주세요. 이 위치의 폴더 경로를 확인할 수 없습니다.","DropOverwriteConfirm":"같은 이름의 파일 {0:N0}개가 있습니다. 덮어쓰시겠습니까?","DefaultSettingsDescription":"새 압축과 바로 압축에 사용할 기본 형식과 압축 수준을 선택합니다.","DefaultCompressionLevel":"기본 압축 수준","DefaultSettings":"기본 설정"}
