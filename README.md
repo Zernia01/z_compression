@@ -107,6 +107,10 @@ On Windows 11, the Explorer compression command may appear under `Show more opti
 
 Generative AI tools, including OpenAI ChatGPT and Codex, were used as assistants during parts of this project's development and documentation. AI-generated suggestions and content were reviewed and edited by the project author before being incorporated.
 
+## 파일 작업 오류 수정 (1.2.3)
+
+선택한 폴더 안에 같은 이름의 기존 압축 파일이 있어도 결과 파일을 다시 입력으로 읽지 않습니다. 새 압축 파일은 임시 파일에 완성한 뒤 기존 결과와 교체하며, 실패·취소 시 기존 결과를 보존합니다. 압축 입력 및 압축 해제 출력 파일의 일시적인 사용 충돌은 최대 약 2초 동안 재시도하고, 중지 요청은 즉시 반영합니다. 해결되지 않은 오류에는 상세 원인도 표시합니다.
+
 ## 여러 항목 압축·일괄 압축 풀기 (1.2.2)
 
 탐색기에서 여러 폴더·파일을 선택해 우클릭하면 `z_compression으로 바로 압축`을 사용할 수 있습니다. 선택한 항목을 하나의 압축 파일로 만듭니다. 여러 압축 파일을 선택해 `z_compression으로 폴더에 풀기`를 누르면 각각 원본 압축 파일 옆에 이름별 폴더를 만들어 순서대로 압축 해제합니다. 앱 왼쪽의 `여러 압축 풀기`에서는 파일들을 선택하고 공통 출력 위치를 지정할 수 있습니다. 같은 이름의 결과 폴더는 `(2)`, `(3)`을 붙여 보존하며, 전체 작업은 한 진행 창에서 확인·중지할 수 있습니다. 암호가 필요한 파일은 개별적으로 암호를 요청합니다.

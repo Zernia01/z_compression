@@ -66,7 +66,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             cancellationToken.ThrowIfCancellationRequested();
             var normalized = entryPath.Replace('\\', '/').TrimStart('/');
             // Reading preceding entries is necessary to reconstruct the solid dictionary.
-            foreach (var (entry, openStream) in ReadEntries(archivePath, password, null))
+            foreach (var (entry, openStream) in ReadEntries(archivePath, password, null, token: cancellationToken))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (entry.IsDirectory || !string.Equals((entry.Key ?? string.Empty).Replace('\\', '/').TrimStart('/'), normalized, StringComparison.Ordinal)) continue;
@@ -93,7 +93,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
     public Stream OpenEntryReadStream(string archivePath, string entryPath, string? password = null, CancellationToken cancellationToken = default)
     {
         var normalized = entryPath.Replace('\\', '/').TrimEnd('/');
-        var iterator = ReadEntries(archivePath, password, null).GetEnumerator();
+        var iterator = ReadEntries(archivePath, password, null, token: cancellationToken).GetEnumerator();
         try
         {
             while (iterator.MoveNext())
@@ -129,7 +129,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
                 token.ThrowIfCancellationRequested();
                 var path = entryPath.Replace('\\', '/').TrimEnd('/');
                 if (_active || _visited.Contains(path)) return engine.OpenEntryReadStream(archivePath, entryPath, password, token);
-                _iterator ??= ReadEntries(archivePath, password, null).GetEnumerator();
+                _iterator ??= ReadEntries(archivePath, password, null, token: token).GetEnumerator();
                 while (_iterator.MoveNext())
                 {
                     token.ThrowIfCancellationRequested();
@@ -185,7 +185,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
                 }
             }
 
-            var entries = ReadEntries(file.FullName, password, legacyEncoding, metadataOnly: true).Select(item =>
+            var entries = ReadEntries(file.FullName, password, legacyEncoding, metadataOnly: true, token: cancellationToken).Select(item =>
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     var entry = item.Entry;
@@ -202,7 +202,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
     public Task TestAsync(string archivePath, string? password = null, CancellationToken cancellationToken = default) =>
         Task.Run(() =>
         {
-            foreach (var (entry, openStream) in ReadEntries(archivePath, password, null))
+            foreach (var (entry, openStream) in ReadEntries(archivePath, password, null, token: cancellationToken))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (entry.IsDirectory) continue;
@@ -219,7 +219,30 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             return;
         }
         if (!string.IsNullOrEmpty(request.Password)) throw new NotSupportedException("Encrypted archive creation is not supported by the selected engine.");
-        var files = ExpandSources(request.Sources).ToArray();
+        var destination = Path.GetFullPath(request.Destination);
+        if (request.Sources.Any(source => Path.GetFullPath(source).Equals(destination, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidDataException("The archive destination cannot replace a selected source file.");
+        var parent = Path.GetDirectoryName(destination)!;
+        Directory.CreateDirectory(parent);
+        var temporary = Path.Combine(parent, $".z-compression-{Guid.NewGuid():N}{Path.GetExtension(destination)}");
+        try
+        {
+            WriteArchiveCore(request with { Destination = temporary }, destination, progress, token);
+            TransientFileAccess.Run(() =>
+            {
+                if (File.Exists(destination)) File.Replace(temporary, destination, null);
+                else File.Move(temporary, destination);
+                return true;
+            }, token);
+        }
+        finally { if (File.Exists(temporary)) File.Delete(temporary); }
+    }
+
+    private static void WriteArchiveCore(CompressionRequest request, string excludedDestination, IProgress<ArchiveProgress>? progress, CancellationToken token)
+    {
+        var files = ExpandSources(request.Sources)
+            .Where(file => !file.FullPath.Equals(excludedDestination, StringComparison.OrdinalIgnoreCase))
+            .DistinctBy(file => file.FullPath, StringComparer.OrdinalIgnoreCase).ToArray();
         var total = files.Where(file => !file.IsDirectory).Sum(file => new FileInfo(file.FullPath).Length);
         var processed = 0L;
         var completed = 0;
@@ -246,7 +269,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
                 Report(progress, file.EntryName, completed, files.Length, processed, total, watch.Elapsed);
                 continue;
             }
-            using var input = new FileStream(file.FullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024, FileOptions.SequentialScan);
+            using var input = TransientFileAccess.Run(() => new FileStream(file.FullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024, FileOptions.SequentialScan), token);
             writer.Write(file.EntryName, input, File.GetLastWriteTime(file.FullPath));
             processed += input.Length;
             completed++;
@@ -258,7 +281,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
     {
         var selection = request.SelectedPaths is not null || request.RelativeRoot.Length > 0 ? new ArchiveExtractionSelection(request) : null;
         Directory.CreateDirectory(request.DestinationDirectory);
-        var entries = ReadEntries(request.ArchivePath, request.Password, request.LegacyEncoding, metadataOnly: true)
+        var entries = ReadEntries(request.ArchivePath, request.Password, request.LegacyEncoding, metadataOnly: true, token: token)
             .Where(item => selection is null || selection.GetRelativePath(item.Entry.Key ?? "") is not null).Select(item =>
         {
             token.ThrowIfCancellationRequested();
@@ -273,7 +296,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         var watch = Stopwatch.StartNew();
         var copyBuffer = new byte[ArchiveReadBufferSize];
         var lastByteReport = 0L;
-        foreach (var (entry, openStream) in ReadEntries(request.ArchivePath, request.Password, request.LegacyEncoding))
+        foreach (var (entry, openStream) in ReadEntries(request.ArchivePath, request.Password, request.LegacyEncoding, token: token))
         {
             token.ThrowIfCancellationRequested();
             var key = entry.Key ?? throw new InvalidDataException("Archive entry has no name.");
@@ -282,6 +305,8 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             RejectLink(entry);
             Report(progress, key, completed, entries.Length, processed, total, watch.Elapsed);
             var destination = SafeExtractionPath.Resolve(request.DestinationDirectory, relative);
+            if (destination.Equals(Path.GetFullPath(request.ArchivePath), StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("An archive entry cannot overwrite the archive being extracted.");
             SafeExtractionPath.EnsureNoReparsePointAncestors(request.DestinationDirectory, destination);
             if (entry.IsDirectory)
             {
@@ -291,21 +316,23 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
                 using var input = openStream();
-                using var output = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024, FileOptions.SequentialScan);
-                var entryProcessed = 0L;
-                int read;
-                while ((read = input.Read(copyBuffer, 0, copyBuffer.Length)) > 0)
+                using (var output = TransientFileAccess.Run(() => new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024, FileOptions.SequentialScan), token))
                 {
-                    token.ThrowIfCancellationRequested();
-                    output.Write(copyBuffer, 0, read);
-                    entryProcessed += read;
-                    if (watch.ElapsedMilliseconds - lastByteReport >= 100)
+                    var entryProcessed = 0L;
+                    int read;
+                    while ((read = input.Read(copyBuffer, 0, copyBuffer.Length)) > 0)
                     {
-                        lastByteReport = watch.ElapsedMilliseconds;
-                        Report(progress, key, completed, entries.Length, processed + entryProcessed, total, watch.Elapsed);
+                        token.ThrowIfCancellationRequested();
+                        output.Write(copyBuffer, 0, read);
+                        entryProcessed += read;
+                        if (watch.ElapsedMilliseconds - lastByteReport >= 100)
+                        {
+                            lastByteReport = watch.ElapsedMilliseconds;
+                            Report(progress, key, completed, entries.Length, processed + entryProcessed, total, watch.Elapsed);
+                        }
                     }
+                    processed += entryProcessed;
                 }
-                processed += entryProcessed;
                 if (entry.LastModifiedTime is { } modified) File.SetLastWriteTime(destination, modified);
             }
             completed++;
@@ -335,7 +362,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             var sources = Directory.EnumerateFileSystemEntries(workDirectory).ToArray();
             CompressCore(new CompressionRequest(sources, temporaryArchive, request.Format, request.Level, request.Password), progress, token);
             token.ThrowIfCancellationRequested();
-            File.Move(temporaryArchive, archivePath, true);
+            TransientFileAccess.Run(() => { File.Move(temporaryArchive, archivePath, true); return true; }, token);
             InvalidateListingCache(archivePath);
         }
         finally
@@ -417,7 +444,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         return entry.Crc.ToString("X8");
     }
 
-    private static IEnumerable<(IEntry Entry, Func<Stream> OpenStream)> ReadEntries(string archivePath, string? password, System.Text.Encoding? encoding, bool metadataOnly = false)
+    private static IEnumerable<(IEntry Entry, Func<Stream> OpenStream)> ReadEntries(string archivePath, string? password, System.Text.Encoding? encoding, bool metadataOnly = false, CancellationToken token = default)
     {
         var options = CreateReaderOptions(password, encoding, archivePath);
         // Compressed TAR requires the streaming reader rather than the raw TAR archive API.
@@ -425,13 +452,13 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             .Any(extension => archivePath.EndsWith(extension, StringComparison.OrdinalIgnoreCase));
         if (compressedTar)
         {
-            using var input = File.OpenRead(archivePath);
+            using var input = TransientFileAccess.Run(() => File.OpenRead(archivePath), token);
             using var reader = ReaderFactory.OpenReader(input, options);
             while (reader.MoveToNextEntry()) yield return (reader.Entry, reader.OpenEntryStream);
         }
         else
         {
-            using var archive = ArchiveFactory.OpenArchive(archivePath, options);
+            using var archive = TransientFileAccess.Run(() => ArchiveFactory.OpenArchive(archivePath, options), token);
             if (metadataOnly)
             {
                 foreach (var entry in archive.Entries) yield return (entry, entry.OpenEntryStream);

@@ -273,7 +273,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         InvalidDataException => _localization["InvalidArchive"],
         UnauthorizedAccessException => _localization["AccessDenied"],
         NotSupportedException => exception.Message,
-        _ => _localization["UnexpectedError"],
+        _ => $"{_localization["UnexpectedError"]}\n{exception.Message}",
     };
 
     public static bool IsArchivePath(string path) => new[] { ".zip", ".7z", ".rar", ".tar", ".gz", ".tgz", ".bz2", ".xz", ".zst" }.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
