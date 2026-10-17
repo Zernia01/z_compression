@@ -10,8 +10,18 @@ public sealed class SplitArchiveService(IArchiveEngine engine)
         new[] { ".zip", ".7z", ".rar", ".tar", ".gz", ".tgz", ".bz2", ".xz", ".zst" }.Contains(Path.GetExtension(path[..^suffix.Length]), StringComparer.OrdinalIgnoreCase);
 
     public static string GetBasePath(string path) => IsVolumePath(path) ? path[..^Path.GetExtension(path).Length] : path;
-    public static string GetFirstVolume(string path) => IsVolumePath(path) ? GetBasePath(path) + ".001" : path;
-    public static bool IsSameArchive(string first, string second) => Path.GetFullPath(GetFirstVolume(first)).Equals(Path.GetFullPath(GetFirstVolume(second)), StringComparison.OrdinalIgnoreCase);
+    public static string GetFirstVolume(string path) => IsVolumePath(path) ? GetBasePath(path) + ".001" : RarVolumeSet.GetFirstPart(path);
+    public static bool IsSameArchive(string first, string second)
+    {
+        if (RarVolumeSet.IsPart(first) != RarVolumeSet.IsPart(second) || IsVolumePath(first) != IsVolumePath(second)) return false;
+        static string Key(string path)
+        {
+            var full = Path.GetFullPath(path);
+            if (RarVolumeSet.IsPart(full)) return Path.Combine(Path.GetDirectoryName(full)!, RarVolumeSet.GetArchiveName(full) + ".rar");
+            return GetBasePath(full);
+        }
+        return Key(first).Equals(Key(second), StringComparison.OrdinalIgnoreCase);
+    }
 
     public async Task<string> CompressAsync(CompressionRequest request, long volumeSize, IProgress<ArchiveProgress>? progress = null, CancellationToken cancellationToken = default)
     {

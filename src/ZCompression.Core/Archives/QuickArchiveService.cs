@@ -46,6 +46,7 @@ public sealed class QuickArchiveService(IArchiveEngine engine)
 
     public static string GetExtractionFolderName(string archivePath)
     {
+        if (RarVolumeSet.IsPart(archivePath)) return RarVolumeSet.GetArchiveName(archivePath);
         archivePath = SplitArchiveService.GetBasePath(archivePath);
         var name = Path.GetFileName(archivePath);
         foreach (var extension in new[] { ".tar.gz", ".tar.bz2", ".tar.xz", ".tar.zst" })

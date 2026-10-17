@@ -342,7 +342,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
 
     private void UpdateCore(ArchiveUpdateRequest request, IProgress<ArchiveProgress>? progress, CancellationToken token)
     {
-        if (SplitArchiveService.IsVolumePath(request.ArchivePath)) throw new NotSupportedException("Extract split archives before modifying them. / 분할 압축은 먼저 풀고 새로 압축해 주세요.");
+        if (SplitArchiveService.IsVolumePath(request.ArchivePath) || RarVolumeSet.IsPart(request.ArchivePath)) throw new NotSupportedException("Extract split archives before modifying them. / 분할 압축은 먼저 풀고 새로 압축해 주세요.");
         var archivePath = Path.GetFullPath(request.ArchivePath);
         if (!File.Exists(archivePath)) throw new FileNotFoundException("Archive was not found.", archivePath);
         if (request.Format == ArchiveFormat.Rar && ArchiveFactory.GetFileParts(archivePath).Skip(1).Any())
@@ -473,7 +473,14 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         }
         else
         {
-            using var archive = TransientFileAccess.Run(() => ArchiveFactory.OpenArchive(archivePath, options), token);
+            var rarParts = RarVolumeSet.IsPart(archivePath) ? RarVolumeSet.FindParts(archivePath) : null;
+            using var archive = TransientFileAccess.Run(() => rarParts is null ? ArchiveFactory.OpenArchive(archivePath, options) : ArchiveFactory.OpenArchive(rarParts, options), token);
+            if (archive.Type == ArchiveType.Rar)
+            {
+                var incomplete = archive.Entries.OfType<SharpCompress.Archives.Rar.RarArchiveEntry>().FirstOrDefault(entry => !entry.IsComplete);
+                if (incomplete is not null)
+                    throw new InvalidDataException($"분할 RAR 조각이 누락되었거나 완전히 내려받지 못했습니다. 모든 조각의 파일명과 다운로드 완료 여부를 확인해 주세요. / Missing or incomplete RAR volumes: {Path.GetFileName(archivePath)}");
+            }
             if (metadataOnly)
             {
                 foreach (var entry in archive.Entries) yield return (entry, entry.OpenEntryStream);

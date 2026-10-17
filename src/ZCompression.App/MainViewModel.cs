@@ -66,7 +66,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public string RemainingText { get => _remainingText; private set => Set(ref _remainingText, value); }
     public bool IsBusy { get => _isBusy; private set => Set(ref _isBusy, value); }
     public bool HasArchive => !string.IsNullOrWhiteSpace(CurrentArchive);
-    public bool CanModifyCurrentArchive => HasArchive && !SplitArchiveService.IsVolumePath(CurrentArchivePath) && _engine.Capabilities.TryGetValue(FormatFromPath(CurrentArchivePath), out var capabilities) && capabilities.CanModify;
+    public bool CanModifyCurrentArchive => HasArchive && !SplitArchiveService.IsVolumePath(CurrentArchivePath) && !RarVolumeSet.IsPart(CurrentArchivePath) && _engine.Capabilities.TryGetValue(FormatFromPath(CurrentArchivePath), out var capabilities) && capabilities.CanModify;
     public ArchiveEntryInfo? SelectedEntry { get => _selectedEntry; set => Set(ref _selectedEntry, value); }
     public ArchiveBrowserItem? SelectedBrowserItem
     {
@@ -273,7 +273,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public string FriendlyError(Exception exception) => exception switch
     {
-        InvalidDataException => _localization["InvalidArchive"],
+        InvalidDataException => $"{_localization["InvalidArchive"]}\n{exception.Message}",
         UnauthorizedAccessException => _localization["AccessDenied"],
         NotSupportedException => exception.Message,
         _ => $"{_localization["UnexpectedError"]}\n{exception.Message}",

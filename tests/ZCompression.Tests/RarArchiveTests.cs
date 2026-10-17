@@ -125,7 +125,8 @@ public sealed class RarArchiveTests
             Assert.IsEmpty(Directory.GetFiles(Path.Combine(root, "out"), "*", SearchOption.AllDirectories));
             var incomplete = Path.Combine(root, "missing.part01.rar");
             File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "Rar5.multi.part01.rar"), incomplete);
-            await Assert.ThrowsExactlyAsync<SharpCompress.Common.IncompleteArchiveException>(() => engine.ListAsync(incomplete));
+            var exception = await Assert.ThrowsExactlyAsync<InvalidDataException>(() => engine.ListAsync(incomplete));
+            StringAssert.Contains(exception.Message, "Missing or incomplete RAR volumes");
         }
         finally { Directory.Delete(root, true); }
     }
