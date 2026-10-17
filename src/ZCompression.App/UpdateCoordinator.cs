@@ -57,7 +57,9 @@ internal static class UpdateCoordinator
             File.Copy(packagedUpdater, runnerPath, overwrite: true);
 
             var executablePath = Environment.ProcessPath ?? throw new InvalidOperationException("The application path is unavailable.");
-            var startInfo = new ProcessStartInfo(runnerPath) { UseShellExecute = false };
+            var elevate = !CanWriteInstallDirectory();
+            var startInfo = new ProcessStartInfo(runnerPath) { UseShellExecute = elevate, CreateNoWindow = !elevate };
+            if (elevate) startInfo.Verb = "runas";
             startInfo.ArgumentList.Add(Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture));
             startInfo.ArgumentList.Add(packageDirectory);
             startInfo.ArgumentList.Add(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar));
@@ -68,9 +70,27 @@ internal static class UpdateCoordinator
         catch (OperationCanceledException) { }
         catch (Exception exception)
         {
+            try
+            {
+                var log = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "z_compression", "logs", "update-error.log");
+                Directory.CreateDirectory(Path.GetDirectoryName(log)!);
+                File.AppendAllText(log, $"{DateTimeOffset.Now:u}\n{exception}\n");
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
             if (showUpToDateMessage)
                 MessageBox.Show(owner, $"{LocalizationManager.Instance["UpdateFailed"]}\n{exception.Message}", LocalizationManager.Instance["AutomaticUpdates"], MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally { progressWindow.Close(); progressWindow.Cancellation.Dispose(); _running = false; }
+    }
+
+    private static bool CanWriteInstallDirectory()
+    {
+        try
+        {
+            using var probe = new FileStream(Path.Combine(AppContext.BaseDirectory, ".z-update-" + Guid.NewGuid().ToString("N")), FileMode.CreateNew, FileAccess.Write, FileShare.None, 1, FileOptions.DeleteOnClose);
+            return true;
+        }
+        catch (UnauthorizedAccessException) { return false; }
     }
 }

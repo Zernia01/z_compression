@@ -129,7 +129,7 @@ public partial class App : Application
 
     private static void CleanupOldPreviews()
     {
-        foreach (var category in new[] { "preview", "drag" })
+        foreach (var category in new[] { "preview", "drag", "update" })
         {
             var root = Path.Combine(Path.GetTempPath(), "z_compression", category);
             if (!Directory.Exists(root)) continue;

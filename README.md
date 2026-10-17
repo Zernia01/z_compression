@@ -107,6 +107,14 @@ On Windows 11, the Explorer compression command may appear under `Show more opti
 
 Generative AI tools, including OpenAI ChatGPT and Codex, were used as assistants during parts of this project's development and documentation. AI-generated suggestions and content were reviewed and edited by the project author before being incorporated.
 
+## 업데이트·휴대폰 ZIP 호환성·해제 성능 (1.2.7)
+
+새로 만드는 ZIP의 로컬 헤더와 중앙 디렉터리에 UTF-8 파일명 표기를 명시합니다. 일본어·중국어·한글 이름을 레거시 인코딩으로 추측하는 리더에서도 올바르게 구분할 수 있습니다. 기존 ZIP은 이 버전에서 다시 압축해야 적용됩니다.
+
+업데이트 확인과 다운로드의 일시적 네트워크·서버 오류는 최대 3회 시도하고 SHA-256 검증을 유지합니다. 파일을 교체하기 전에 대상 파일 전체를 백업하며, 파일 잠금 재시도와 실패 시 복원을 지원합니다. 교체 성공 후 임시 파일 정리 실패가 설치를 되돌리지 않도록 수정했습니다. 필요한 경우 설치 폴더 권한 상승을 요청하고, 실패 원인은 로컬 `logs/update-error.log`에 기록합니다.
+
+압축 해제 출력 버퍼는 작은 파일에 맞게 줄이고 진행 알림은 약 100ms 간격으로 제한합니다. 시간 정보는 열린 파일 핸들로 설정해 파일을 다시 여는 비용을 줄였습니다. 로컬의 작은 파일 2,000개 측정에서 1,271ms → 879ms, 메모리 할당량 약 2,013MB → 19MB로 줄었습니다. 저장 장치와 파일 구성에 따라 차이가 납니다.
+
 ## 분할 RAR 해제 개선 (1.2.6)
 
 `이름.part1.rar`, `.part2.rar` 형식은 같은 폴더에서 모든 조각을 찾아 번호순으로 연결합니다. 번호 자릿수가 섞인 이름도 처리하며, 두 번째 이후 조각을 열거나 여러 조각을 일괄 선택해도 첫 조각부터 한 번만 해제합니다. 출력 폴더 이름에서는 `.part1`을 제외합니다. 중간 번호 누락·중복과 불완전한 마지막 조각은 해제 전에 확인 문구로 알립니다. 누락되었거나 완전히 내려받지 못한 조각은 다시 준비해야 합니다.

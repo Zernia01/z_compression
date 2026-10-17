@@ -252,6 +252,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         using var output = new FileStream(request.Destination, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024, FileOptions.SequentialScan);
         var writerOptions = new WriterOptions(ToCompressionType(request.Format))
         {
+            ArchiveEncoding = new ArchiveEncoding { Default = System.Text.Encoding.UTF8 },
             LeaveStreamOpen = false,
             BufferSize = 1024 * 1024,
         };
@@ -279,6 +280,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
 
     private static void ExtractCore(ExtractionRequest request, IProgress<ArchiveProgress>? progress, CancellationToken token)
     {
+        if (progress is not null) progress = new ThrottledArchiveProgress(progress);
         var selection = request.SelectedPaths is not null || request.RelativeRoot.Length > 0 ? new ArchiveExtractionSelection(request) : null;
         Directory.CreateDirectory(request.DestinationDirectory);
         var entries = ReadEntries(request.ArchivePath, request.Password, request.LegacyEncoding, metadataOnly: true, token: token)
@@ -316,7 +318,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
                 using var input = openStream();
-                using (var output = TransientFileAccess.Run(() => new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024, FileOptions.SequentialScan), token))
+                using (var output = TransientFileAccess.Run(() => new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None, entry.Size < 65536 ? 4096 : 65536, FileOptions.SequentialScan), token))
                 {
                     var entryProcessed = 0L;
                     int read;
@@ -332,8 +334,8 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
                         }
                     }
                     processed += entryProcessed;
+                    if (entry.LastModifiedTime is { } modified) File.SetLastWriteTime(output.SafeFileHandle, modified);
                 }
-                if (entry.LastModifiedTime is { } modified) File.SetLastWriteTime(destination, modified);
             }
             completed++;
             Report(progress, key, completed, entries.Length, processed, total, watch.Elapsed);

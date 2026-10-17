@@ -10,12 +10,16 @@ public sealed class GitHubUpdateService(HttpClient httpClient, string owner, str
     public const string DefaultOwner = "zernia01";
     public const string DefaultRepository = "z_compression";
 
-    public async Task<UpdateCheckResult> CheckAsync(Version currentVersion, CancellationToken cancellationToken = default)
+    public Task<UpdateCheckResult> CheckAsync(Version currentVersion, CancellationToken cancellationToken = default) =>
+        RetryAsync(token => CheckCoreAsync(currentVersion, token), cancellationToken, TimeSpan.FromSeconds(20));
+
+    private async Task<UpdateCheckResult> CheckCoreAsync(Version currentVersion, CancellationToken cancellationToken)
     {
         // Our releases always publish this manifest. Avoid a separate GitHub API
         // request before downloading the same metadata through the asset redirect.
         using var directRequest = new HttpRequestMessage(HttpMethod.Get, $"https://github.com/{owner}/{repository}/releases/latest/download/update-manifest.json");
         directRequest.Headers.UserAgent.Add(new ProductInfoHeaderValue("z_compression", currentVersion.ToString()));
+        directRequest.Headers.CacheControl = new CacheControlHeaderValue { NoCache = true };
         using var directResponse = await httpClient.SendAsync(directRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         if (directResponse.IsSuccessStatusCode)
         {
@@ -50,7 +54,10 @@ public sealed class GitHubUpdateService(HttpClient httpClient, string owner, str
         return new UpdateCheckResult(latest > currentVersion, currentVersion, latest, manifest);
     }
 
-    public async Task<string> DownloadAndVerifyAsync(UpdateManifest manifest, string destinationDirectory, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
+    public Task<string> DownloadAndVerifyAsync(UpdateManifest manifest, string destinationDirectory, IProgress<double>? progress = null, CancellationToken cancellationToken = default) =>
+        RetryAsync(token => DownloadCoreAsync(manifest, destinationDirectory, progress, token), cancellationToken, TimeSpan.FromMinutes(10), retryNotFound: true);
+
+    private async Task<string> DownloadCoreAsync(UpdateManifest manifest, string destinationDirectory, IProgress<double>? progress, CancellationToken cancellationToken)
     {
         progress?.Report(0);
         Directory.CreateDirectory(destinationDirectory);
@@ -58,7 +65,10 @@ public sealed class GitHubUpdateService(HttpClient httpClient, string owner, str
         var temporary = target + ".download";
         try
         {
-            using var response = await httpClient.GetAsync(manifest.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            using var request = new HttpRequestMessage(HttpMethod.Get, manifest.DownloadUrl);
+            request.Headers.UserAgent.Add(new ProductInfoHeaderValue("z_compression", manifest.Version));
+            request.Headers.CacheControl = new CacheControlHeaderValue { NoCache = true };
+            using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             response.EnsureSuccessStatusCode();
             using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
             await using (var source = await response.Content.ReadAsStreamAsync(cancellationToken))
@@ -84,6 +94,29 @@ public sealed class GitHubUpdateService(HttpClient httpClient, string owner, str
         }
         finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }
+
+    private static async Task<T> RetryAsync<T>(Func<CancellationToken, Task<T>> action, CancellationToken token, TimeSpan timeout, bool retryNotFound = false)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            token.ThrowIfCancellationRequested();
+            using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
+            deadline.CancelAfter(timeout);
+            try { return await action(deadline.Token); }
+            catch (Exception exception) when (attempt < 2 && !token.IsCancellationRequested && IsTransient(exception, retryNotFound))
+            { await Task.Delay(500 * (attempt + 1), token); }
+            catch (OperationCanceledException exception) when (!token.IsCancellationRequested)
+            { throw new TimeoutException("The update server did not respond in time after retries.", exception); }
+        }
+    }
+
+    private static bool IsTransient(Exception exception, bool retryNotFound) => exception switch
+    {
+        HttpRequestException http => http.StatusCode is null || (int)http.StatusCode >= 500 || http.StatusCode is System.Net.HttpStatusCode.RequestTimeout or System.Net.HttpStatusCode.TooManyRequests || retryNotFound && http.StatusCode == System.Net.HttpStatusCode.NotFound,
+        OperationCanceledException => true,
+        IOException => true,
+        _ => false
+    };
 
     public static async Task<string> ComputeSha256Async(string path, CancellationToken cancellationToken = default)
     {
