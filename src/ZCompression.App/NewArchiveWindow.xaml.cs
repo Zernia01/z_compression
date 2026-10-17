@@ -14,6 +14,7 @@ public partial class NewArchiveWindow : Window, INotifyPropertyChanged
     public NewArchiveWindow(IEnumerable<string>? initialSources = null, AppSettings? settings = null)
     {
         InitializeComponent();
+        MaxHeight = SystemParameters.WorkArea.Height;
         DataContext = this;
         LocationBox.Text = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
         FileNameBox.Text = LocalizationManager.Instance["DefaultArchiveName"];
@@ -33,6 +34,7 @@ public partial class NewArchiveWindow : Window, INotifyPropertyChanged
     public string DestinationPath { get; private set; } = "";
     public ArchiveFormat SelectedFormat { get; private set; } = ArchiveFormat.Zip;
     public CompressionPreset SelectedLevel { get; private set; } = CompressionPreset.High;
+    public long? SelectedVolumeSize { get; private set; }
     public string? SelectedPassword => SelectedFormat == ArchiveFormat.Rar && PasswordBox.Password.Length > 0 ? PasswordBox.Password : null;
 
     private void OnAddFiles(object sender, RoutedEventArgs e)
@@ -82,6 +84,13 @@ public partial class NewArchiveWindow : Window, INotifyPropertyChanged
             return;
         }
         SelectedLevel = ParseEnumTag(LevelBox, CompressionPreset.High);
+        SelectedVolumeSize = null;
+        if (SplitEnabled.IsChecked == true)
+        {
+            if (!long.TryParse(SplitSizeBox.Text.Trim(), out var amount) || amount < 1 || amount > 1048576)
+            { ValidationText.Text = LocalizationManager.Instance["SplitSizeInvalid"]; return; }
+            SelectedVolumeSize = amount * (SplitUnitBox.SelectedIndex == 1 ? 1024L * 1024 * 1024 : 1024L * 1024);
+        }
         var extension = SelectedFormat switch { ArchiveFormat.Rar => ".rar", ArchiveFormat.SevenZip => ".7z", ArchiveFormat.Tar => ".tar", ArchiveFormat.TarGZip => ".tar.gz", _ => ".zip" };
         var fileName = StripArchiveExtension(FileNameBox.Text) + extension;
         DestinationPath = Path.GetFullPath(Path.Combine(LocationBox.Text.Trim(), fileName));

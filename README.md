@@ -107,6 +107,12 @@ On Windows 11, the Explorer compression command may appear under `Show more opti
 
 Generative AI tools, including OpenAI ChatGPT and Codex, were used as assistants during parts of this project's development and documentation. AI-generated suggestions and content were reviewed and edited by the project author before being incorporated.
 
+## 분할 압축 (1.2.5)
+
+`새 압축` 창에서 `분할 압축`을 선택하고 조각 하나의 최대 용량을 MB 또는 GB로 지정하세요(1 MB = 1024 × 1024바이트). ZIP·7Z·TAR·TAR.GZ와 기존 WinRAR 연동 RAR 생성에 적용되며 `이름.zip.001`, `.002`와 같은 바이트 분할 파일을 만듭니다. RAR도 `.rar.001` 형식이며 WinRAR의 `.part1.rar` 형식과 구분됩니다. 모든 조각을 같은 폴더에 둔 뒤 첫 번째 `.001` 파일을 열거나 압축 풀기를 실행하세요. 조각들을 함께 선택해 일괄 해제해도 한 번만 처리합니다.
+
+압축·분할 중 진행률과 취소를 지원하고, 같은 이름의 기존 조각은 덮어쓰지 않습니다. 생성 시 완성된 압축 파일과 조각을 준비하는 임시 디스크 공간이 필요합니다. 압축 해제는 조각들을 이어 읽으며 별도의 완성본 파일을 만들지 않습니다. 분할 파일에 내용을 추가하려면 먼저 압축을 풀고 새로 압축하세요.
+
 ## 파일 작업 오류 수정 (1.2.3)
 
 선택한 폴더 안에 같은 이름의 기존 압축 파일이 있어도 결과 파일을 다시 입력으로 읽지 않습니다. 새 압축 파일은 임시 파일에 완성한 뒤 기존 결과와 교체하며, 실패·취소 시 기존 결과를 보존합니다. 압축 입력 및 압축 해제 출력 파일의 일시적인 사용 충돌은 최대 약 2초 동안 재시도하고, 중지 요청은 즉시 반영합니다. 해결되지 않은 오류에는 상세 원인도 표시합니다.

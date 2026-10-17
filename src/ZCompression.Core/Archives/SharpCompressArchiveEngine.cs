@@ -175,7 +175,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         {
             var file = new FileInfo(Path.GetFullPath(archivePath));
             // A multipart RAR can change even when its first volume is unchanged.
-            var cacheable = password is null && legacyEncoding is null && !file.Extension.Equals(".rar", StringComparison.OrdinalIgnoreCase);
+            var cacheable = password is null && legacyEncoding is null && !SplitArchiveService.IsVolumePath(archivePath) && !file.Extension.Equals(".rar", StringComparison.OrdinalIgnoreCase);
             if (cacheable)
             {
                 lock (_listingCacheLock)
@@ -255,7 +255,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             LeaveStreamOpen = false,
             BufferSize = 1024 * 1024,
         };
-        if (request.Format != ArchiveFormat.SevenZip) writerOptions.CompressionLevel = ToLevel(request.Level);
+        if (request.Format != ArchiveFormat.SevenZip) writerOptions.CompressionLevel = request.Format == ArchiveFormat.Tar ? 0 : ToLevel(request.Level);
         using var writer = WriterFactory.OpenWriter(output, ToArchiveType(request.Format), writerOptions);
 
         foreach (var file in files)
@@ -305,7 +305,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             RejectLink(entry);
             Report(progress, key, completed, entries.Length, processed, total, watch.Elapsed);
             var destination = SafeExtractionPath.Resolve(request.DestinationDirectory, relative);
-            if (destination.Equals(Path.GetFullPath(request.ArchivePath), StringComparison.OrdinalIgnoreCase))
+            if (SplitArchiveService.IsSameArchive(destination, request.ArchivePath))
                 throw new InvalidDataException("An archive entry cannot overwrite the archive being extracted.");
             SafeExtractionPath.EnsureNoReparsePointAncestors(request.DestinationDirectory, destination);
             if (entry.IsDirectory)
@@ -342,6 +342,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
 
     private void UpdateCore(ArchiveUpdateRequest request, IProgress<ArchiveProgress>? progress, CancellationToken token)
     {
+        if (SplitArchiveService.IsVolumePath(request.ArchivePath)) throw new NotSupportedException("Extract split archives before modifying them. / 분할 압축은 먼저 풀고 새로 압축해 주세요.");
         var archivePath = Path.GetFullPath(request.ArchivePath);
         if (!File.Exists(archivePath)) throw new FileNotFoundException("Archive was not found.", archivePath);
         if (request.Format == ArchiveFormat.Rar && ArchiveFactory.GetFileParts(archivePath).Skip(1).Any())
@@ -449,12 +450,26 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         var options = CreateReaderOptions(password, encoding, archivePath);
         // Compressed TAR requires the streaming reader rather than the raw TAR archive API.
         var compressedTar = new[] { ".tar.gz", ".tgz", ".tar.bz2", ".tar.xz", ".tar.zst" }
-            .Any(extension => archivePath.EndsWith(extension, StringComparison.OrdinalIgnoreCase));
+            .Any(extension => SplitArchiveService.GetBasePath(archivePath).EndsWith(extension, StringComparison.OrdinalIgnoreCase));
+        if (SplitArchiveService.IsVolumePath(archivePath))
+        {
+            using var volumes = new SplitArchiveReadStream(archivePath, token);
+            if (compressedTar)
+            {
+                foreach (var item in ReadCompressedTar(volumes, options)) yield return item;
+            }
+            else
+            {
+                using var splitArchive = ArchiveFactory.OpenArchive(volumes, options);
+                if (metadataOnly) foreach (var entry in splitArchive.Entries) yield return (entry, entry.OpenEntryStream);
+                else foreach (var item in ReadEntries(splitArchive)) yield return item;
+            }
+            yield break;
+        }
         if (compressedTar)
         {
             using var input = TransientFileAccess.Run(() => File.OpenRead(archivePath), token);
-            using var reader = ReaderFactory.OpenReader(input, options);
-            while (reader.MoveToNextEntry()) yield return (reader.Entry, reader.OpenEntryStream);
+            foreach (var item in ReadCompressedTar(input, options)) yield return item;
         }
         else
         {
@@ -470,6 +485,12 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         }
     }
 
+    private static IEnumerable<(IEntry Entry, Func<Stream> OpenStream)> ReadCompressedTar(Stream input, ReaderOptions options)
+    {
+        // The explicit TAR reader restores its format-probe position before reading.
+        using var reader = SharpCompress.Readers.Tar.TarReader.OpenReader(input, options);
+        while (reader.MoveToNextEntry()) yield return (reader.Entry, reader.OpenEntryStream);
+    }
     private static ReaderOptions CreateReaderOptions(string? password, System.Text.Encoding? encoding, string archivePath) => new()
     {
         Password = password,
@@ -480,6 +501,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
 
     private static string GetExtensionHint(string archivePath)
     {
+        archivePath = SplitArchiveService.GetBasePath(archivePath);
         var name = Path.GetFileName(archivePath);
         if (name.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase)) return "tar.gz";
         return Path.GetExtension(name).TrimStart('.').ToLowerInvariant();

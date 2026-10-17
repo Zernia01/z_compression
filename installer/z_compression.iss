@@ -1,5 +1,5 @@
 #define MyAppName "z_compression"
-#define MyAppVersion "1.2.4"
+#define MyAppVersion "1.2.5"
 #define MyAppPublisher "z_compression contributors"
 #define MyAppExeName "z_compression.exe"
 
@@ -56,6 +56,7 @@ Root: HKCU; Subkey: "Software\Classes\ZCompression.Archive\shell\open\command"; 
 Root: HKCU; Subkey: "Software\Classes\Applications\{#MyAppExeName}"; ValueType: string; ValueName: "FriendlyAppName"; ValueData: "{#MyAppName}"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\Applications\{#MyAppExeName}\DefaultIcon"; ValueType: string; ValueData: "{app}\{#MyAppExeName},0"
 Root: HKCU; Subkey: "Software\Classes\Applications\{#MyAppExeName}\shell\open\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
+Root: HKCU; Subkey: "Software\Classes\.001\OpenWithProgids"; ValueType: none; ValueName: "ZCompression.Archive"; Flags: uninsdeletevalue
 Root: HKCU; Subkey: "Software\Classes\Applications\{#MyAppExeName}\SupportedTypes"; ValueType: string; ValueName: ".zip"; ValueData: ""
 Root: HKCU; Subkey: "Software\Classes\Applications\{#MyAppExeName}\SupportedTypes"; ValueType: string; ValueName: ".7z"; ValueData: ""
 Root: HKCU; Subkey: "Software\Classes\Applications\{#MyAppExeName}\SupportedTypes"; ValueType: string; ValueName: ".rar"; ValueData: ""
@@ -76,6 +77,7 @@ Root: HKCU; Subkey: "Software\ZCompression\Capabilities\FileAssociations"; Value
 Root: HKCU; Subkey: "Software\ZCompression\Capabilities\FileAssociations"; ValueType: string; ValueName: ".bz2"; ValueData: "ZCompression.Archive"
 Root: HKCU; Subkey: "Software\ZCompression\Capabilities\FileAssociations"; ValueType: string; ValueName: ".xz"; ValueData: "ZCompression.Archive"
 Root: HKCU; Subkey: "Software\ZCompression\Capabilities\FileAssociations"; ValueType: string; ValueName: ".zst"; ValueData: "ZCompression.Archive"
+Root: HKCU; Subkey: "Software\ZCompression\Capabilities\FileAssociations"; ValueType: string; ValueName: ".001"; ValueData: "ZCompression.Archive"
 Root: HKCU; Subkey: "Software\RegisteredApplications"; ValueType: string; ValueName: "z_compression"; ValueData: "Software\ZCompression\Capabilities"; Flags: uninsdeletevalue
 Root: HKCU; Subkey: "Software\Classes\*\shell\ZCompression.Compress"; ValueType: string; ValueName: "MUIVerb"; ValueData: "z_compression으로 바로 압축"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\*\shell\ZCompression.Compress"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName},0"

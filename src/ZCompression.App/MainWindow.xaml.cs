@@ -75,7 +75,7 @@ public partial class MainWindow : Window
         var dialog = new NewArchiveWindow(initialSources, _viewModel.Settings) { Owner = this };
         if (dialog.ShowDialog() == true)
             await RunWithProgressAsync(LocalizationManager.Instance["CompressAction"], Path.GetFileName(dialog.DestinationPath), false,
-                () => _viewModel.CompressAsync(dialog.SelectedSources, dialog.DestinationPath, dialog.SelectedFormat, dialog.SelectedLevel, dialog.SelectedPassword));
+                () => _viewModel.CompressAsync(dialog.SelectedSources, dialog.DestinationPath, dialog.SelectedFormat, dialog.SelectedLevel, dialog.SelectedPassword, dialog.SelectedVolumeSize));
     }
 
     private async void OnTest(object sender, RoutedEventArgs e)
@@ -343,6 +343,6 @@ public partial class MainWindow : Window
         finally { progressWindow.Finish(); }
     }
 
-    private static OpenFileDialog ArchiveOpenDialog() => new() { Filter = $"{LocalizationManager.Instance["Archives"]}|*.zip;*.7z;*.rar;*.tar;*.gz;*.tgz;*.bz2;*.xz;*.zst|{LocalizationManager.Instance["AllFiles"]}|*.*", CheckFileExists = true };
+    private static OpenFileDialog ArchiveOpenDialog() => new() { Filter = $"{LocalizationManager.Instance["Archives"]}|*.zip;*.7z;*.rar;*.tar;*.gz;*.tgz;*.bz2;*.xz;*.zst;*.001|{LocalizationManager.Instance["AllFiles"]}|*.*", CheckFileExists = true };
     private static string? SelectFolder(string title) { var dialog = new OpenFolderDialog { Title = title }; return dialog.ShowDialog() == true ? dialog.FolderName : null; }
 }

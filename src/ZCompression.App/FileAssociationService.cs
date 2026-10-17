@@ -13,7 +13,7 @@ internal static class FileAssociationService
     private const string CapabilitiesPath = @"Software\ZCompression\Capabilities";
 
     internal static readonly string[] SupportedExtensions =
-        [".zip", ".7z", ".rar", ".tar", ".gz", ".tgz", ".bz2", ".xz", ".zst"];
+        [".zip", ".7z", ".rar", ".tar", ".gz", ".tgz", ".bz2", ".xz", ".zst", ".001"];
 
     internal static void RegisterCurrentUser(string executablePath, AppSettings settings)
     {

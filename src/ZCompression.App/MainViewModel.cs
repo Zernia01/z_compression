@@ -66,7 +66,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public string RemainingText { get => _remainingText; private set => Set(ref _remainingText, value); }
     public bool IsBusy { get => _isBusy; private set => Set(ref _isBusy, value); }
     public bool HasArchive => !string.IsNullOrWhiteSpace(CurrentArchive);
-    public bool CanModifyCurrentArchive => HasArchive && _engine.Capabilities.TryGetValue(FormatFromPath(CurrentArchivePath), out var capabilities) && capabilities.CanModify;
+    public bool CanModifyCurrentArchive => HasArchive && !SplitArchiveService.IsVolumePath(CurrentArchivePath) && _engine.Capabilities.TryGetValue(FormatFromPath(CurrentArchivePath), out var capabilities) && capabilities.CanModify;
     public ArchiveEntryInfo? SelectedEntry { get => _selectedEntry; set => Set(ref _selectedEntry, value); }
     public ArchiveBrowserItem? SelectedBrowserItem
     {
@@ -85,15 +85,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public async Task OpenArchiveAsync(string path) => await WithOperation(async token =>
     {
         Status = _localization["Opening"];
+        path = SplitArchiveService.GetFirstVolume(path);
         var entries = await WithArchivePassword(path, password => _engine.ListAsync(path, password, cancellationToken: token));
         Entries.ReplaceAll(entries);
         CurrentArchivePath = Path.GetFullPath(path); CurrentArchive = Path.GetFileName(path); CurrentFolder = ""; SelectedEntry = null; SelectedBrowserItem = null; RebuildBrowserItems(); Status = string.Format(_localization["EntryCount"], entries.Count);
     });
 
-    public async Task CompressAsync(IReadOnlyList<string> sources, string destination, ArchiveFormat format, CompressionPreset? level = null, string? password = null) => await WithOperation(async token =>
+    public async Task CompressAsync(IReadOnlyList<string> sources, string destination, ArchiveFormat format, CompressionPreset? level = null, string? password = null, long? volumeSize = null) => await WithOperation(async token =>
     {
         Status = _localization["Compressing"];
-        await _engine.CompressAsync(new CompressionRequest(sources, destination, format, level ?? Settings.GetDefaultCompressionLevel(), password), CreateProgress(), token);
+        var request = new CompressionRequest(sources, destination, format, level ?? Settings.GetDefaultCompressionLevel(), password);
+        if (volumeSize is { } size) destination = await new SplitArchiveService(_engine).CompressAsync(request, size, CreateProgress(), token);
+        else await _engine.CompressAsync(request, CreateProgress(), token);
         var entries = await _engine.ListAsync(destination, password, cancellationToken: token);
         var fullPath = Path.GetFullPath(destination);
         _archivePasswords.Remove(fullPath);
@@ -150,7 +153,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public async Task ExtractManyAsync(IReadOnlyList<string> archives, string? destination = null) => await WithOperation(async token =>
     {
-        var paths = archives.Select(Path.GetFullPath).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        var paths = archives.Select(SplitArchiveService.GetFirstVolume).Select(Path.GetFullPath).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         if (paths.Length == 0 || paths.Any(path => !File.Exists(path) || !IsArchivePath(path))) throw new InvalidDataException("Select supported archives.");
         IProgress<ArchiveProgress> progress = CreateProgress();
         for (var index = 0; index < paths.Length; index++)
@@ -276,7 +279,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _ => $"{_localization["UnexpectedError"]}\n{exception.Message}",
     };
 
-    public static bool IsArchivePath(string path) => new[] { ".zip", ".7z", ".rar", ".tar", ".gz", ".tgz", ".bz2", ".xz", ".zst" }.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+    public static bool IsArchivePath(string path) => SplitArchiveService.IsVolumePath(path) || new[] { ".zip", ".7z", ".rar", ".tar", ".gz", ".tgz", ".bz2", ".xz", ".zst" }.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
     public static ArchiveFormat FormatFromPath(string path) => path.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".tgz", StringComparison.OrdinalIgnoreCase) ? ArchiveFormat.TarGZip : Path.GetExtension(path).ToLowerInvariant() switch { ".7z" => ArchiveFormat.SevenZip, ".rar" => ArchiveFormat.Rar, ".tar" => ArchiveFormat.Tar, ".gz" => ArchiveFormat.GZip, ".bz2" => ArchiveFormat.BZip2, ".xz" => ArchiveFormat.Xz, ".zst" => ArchiveFormat.Zstandard, _ => ArchiveFormat.Zip };
 
     private Progress<ArchiveProgress> CreateProgress() => new(value =>

@@ -20,7 +20,7 @@ public static class ArchiveDropExtraction
             var path = SafeExtractionPath.Resolve(droppedFolder, entry.Name);
             SafeExtractionPath.EnsureNoReparsePointAncestors(droppedFolder, path);
             if (entry.IsDirectory) continue;
-            if (source.Equals(path, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("An archive cannot overwrite itself during extraction.");
+            if (SplitArchiveService.IsSameArchive(source, path)) throw new InvalidDataException("An archive cannot overwrite itself during extraction.");
             if (File.Exists(path)) count++;
         }
         return count;

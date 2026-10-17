@@ -77,6 +77,18 @@ internal static class Program
             await vm.ExtractManyAsync(archives);
             foreach (var archive in archives)
                 if (!Directory.Exists(Path.Combine(Path.GetDirectoryName(archive)!, "한글"))) throw new Exception("Shell batch did not extract beside each archive.");
+            var splitSource = Path.Combine(root, "split-source.bin");
+            var splitBytes = new byte[1_500_000]; new Random(22).NextBytes(splitBytes);
+            await File.WriteAllBytesAsync(splitSource, splitBytes);
+            var splitDestination = Path.Combine(root, "split.zip");
+            await vm.CompressAsync([splitSource], splitDestination, ArchiveFormat.Zip, volumeSize: 1024 * 1024);
+            if (vm.CurrentArchivePath != splitDestination + ".001" || vm.CanModifyCurrentArchive) throw new Exception("Split archive did not open correctly or enabled archive updates.");
+            var splitOutput = Path.Combine(root, "split-output");
+            await vm.ExtractManyAsync([splitDestination + ".001", splitDestination + ".002"], splitOutput);
+            if (Directory.GetDirectories(splitOutput).Length != 1 || !(await File.ReadAllBytesAsync(Path.Combine(splitOutput, "split", "split-source.bin"))).SequenceEqual(splitBytes)) throw new Exception("Split volumes were not deduplicated or did not extract correctly.");
+            var splitDialog = new NewArchiveWindow([splitSource], new AppSettings());
+            if (splitDialog.SelectedVolumeSize is not null || ((System.Windows.Controls.CheckBox)splitDialog.FindName("SplitEnabled")).IsChecked == true) throw new Exception("Split creation must be opt-in.");
+            splitDialog.Close();
             vm.PropertyChanged += (_, e) => { if (e.PropertyName == "Status" && vm.Status.Contains("(2/3)", StringComparison.Ordinal)) vm.Cancel(); };
             var canceled = Path.Combine(root, "canceled");
             try { await vm.ExtractManyAsync(archives, canceled); throw new Exception("Batch cancellation was ignored."); }
