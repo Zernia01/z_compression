@@ -83,6 +83,13 @@ internal static class Program
 
     private static void VerifyAppOwnedDrop()
     {
+        var longPath = "root\\" + string.Join("\\", Enumerable.Repeat("a-long-nested-folder-name", 15)) + "\\日本語.txt";
+        var preview = ArchiveDestinationDrag.CreatePreview([
+            new ArchiveExportEntry("root", "", true, 0, null),
+            new ArchiveExportEntry(longPath, longPath, false, 3, null),
+            new ArchiveExportEntry("中文.txt", "中文.txt", false, 2, null)]);
+        if (preview.Count != 2 || VirtualArchiveDataObject.CreateDescriptors(preview).Length != 4 + 592 * 2)
+            throw new InvalidOperationException("Destination drag must not encode long nested paths in Windows descriptors.");
         var captures = 0;
         var expected = new ShellDropLocation(1, 2, new IntPtr(3), new IntPtr(4), true);
         var source = new DestinationDropSource(() => { captures++; return expected; });

@@ -70,6 +70,7 @@ internal sealed class VirtualArchiveDataObject : IDataObject, IDataObjectAsyncCa
         writer.Write(entries.Count);
         foreach (var entry in entries)
         {
+            if (entry.Name.Length >= 260) throw new NotSupportedException("Windows virtual file descriptors require a name shorter than 260 characters.");
             writer.Write(0x4004u | (entry.IsDirectory ? 0u : 0x40u) | (entry.Modified is null ? 0u : 0x20u));
             writer.Write(new byte[32]); // CLSID, SIZEL, POINTL
             writer.Write(entry.IsDirectory ? 0x10u : 0x80u);

@@ -227,18 +227,26 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         var temporary = Path.Combine(parent, $".z-compression-{Guid.NewGuid():N}{Path.GetExtension(destination)}");
         try
         {
-            WriteArchiveCore(request with { Destination = temporary }, destination, progress, token);
+            var writingProgress = request.Format == ArchiveFormat.Zip && progress is not null ? new ZipWritingProgress(progress) : progress;
+            var expected = WriteArchiveCore(request with { Destination = temporary }, destination, writingProgress, token);
+            if (request.Format == ArchiveFormat.Zip)
+                ZipIntegrityVerifier.Verify(temporary, progress, token, expected.Count, expected.Bytes);
             TransientFileAccess.Run(() =>
             {
                 if (File.Exists(destination)) File.Replace(temporary, destination, null);
                 else File.Move(temporary, destination);
                 return true;
             }, token);
+            if (request.Format == ArchiveFormat.Zip)
+                Report(progress, Path.GetFileName(destination), expected.Count, expected.Count, expected.Bytes, expected.Bytes, TimeSpan.Zero);
         }
         finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }
 
-    private static void WriteArchiveCore(CompressionRequest request, string excludedDestination, IProgress<ArchiveProgress>? progress, CancellationToken token)
+    private sealed class ZipWritingProgress(IProgress<ArchiveProgress> target) : IProgress<ArchiveProgress>
+    { public void Report(ArchiveProgress value) => target.Report(value with { Percent = value.Percent * 0.9 }); }
+
+    private static (int Count, long Bytes) WriteArchiveCore(CompressionRequest request, string excludedDestination, IProgress<ArchiveProgress>? progress, CancellationToken token)
     {
         var files = ExpandSources(request.Sources)
             .Where(file => !file.FullPath.Equals(excludedDestination, StringComparison.OrdinalIgnoreCase))
@@ -253,29 +261,32 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         var writerOptions = new WriterOptions(ToCompressionType(request.Format))
         {
             ArchiveEncoding = new ArchiveEncoding { Default = System.Text.Encoding.UTF8 },
-            LeaveStreamOpen = false,
+            LeaveStreamOpen = true,
             BufferSize = 1024 * 1024,
         };
         if (request.Format != ArchiveFormat.SevenZip) writerOptions.CompressionLevel = request.Format == ArchiveFormat.Tar ? 0 : ToLevel(request.Level);
-        using var writer = WriterFactory.OpenWriter(output, ToArchiveType(request.Format), writerOptions);
-
-        foreach (var file in files)
+        using (var writer = WriterFactory.OpenWriter(output, ToArchiveType(request.Format), writerOptions))
         {
-            token.ThrowIfCancellationRequested();
-            Report(progress, file.EntryName, completed, files.Length, processed, total, watch.Elapsed);
-            if (file.IsDirectory)
+            foreach (var file in files)
             {
-                writer.WriteDirectory(file.EntryName, Directory.GetLastWriteTime(file.FullPath));
+                token.ThrowIfCancellationRequested();
+                Report(progress, file.EntryName, completed, files.Length, processed, total, watch.Elapsed);
+                if (file.IsDirectory)
+                {
+                    writer.WriteDirectory(file.EntryName, Directory.GetLastWriteTime(file.FullPath));
+                    completed++;
+                    Report(progress, file.EntryName, completed, files.Length, processed, total, watch.Elapsed);
+                    continue;
+                }
+                using var input = TransientFileAccess.Run(() => new FileStream(file.FullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024, FileOptions.SequentialScan), token);
+                writer.Write(file.EntryName, input, File.GetLastWriteTime(file.FullPath));
+                processed += input.Length;
                 completed++;
                 Report(progress, file.EntryName, completed, files.Length, processed, total, watch.Elapsed);
-                continue;
             }
-            using var input = TransientFileAccess.Run(() => new FileStream(file.FullPath, FileMode.Open, FileAccess.Read, FileShare.Read, 1024 * 1024, FileOptions.SequentialScan), token);
-            writer.Write(file.EntryName, input, File.GetLastWriteTime(file.FullPath));
-            processed += input.Length;
-            completed++;
-            Report(progress, file.EntryName, completed, files.Length, processed, total, watch.Elapsed);
         }
+        output.Flush(flushToDisk: true);
+        return (files.Length, total);
     }
 
     private static void ExtractCore(ExtractionRequest request, IProgress<ArchiveProgress>? progress, CancellationToken token)

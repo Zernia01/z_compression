@@ -285,7 +285,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private Progress<ArchiveProgress> CreateProgress() => new(value =>
     {
         ProgressPercent = value.Percent;
-        CurrentOperationFile = value.CurrentFile;
+        CurrentOperationFile = value.IsVerifying ? $"{_localization["VerifyingArchive"]} · {value.CurrentFile}" : value.CurrentFile;
         OperationCounts = string.Format(_localization["ProgressCount"], value.CompletedFiles, value.TotalFiles);
         ProcessedText = $"{FormatBytes(value.ProcessedBytes)} / {FormatBytes(value.TotalBytes)}";
         SpeedText = $"{FormatBytes(value.BytesPerSecond)}/s";

@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="SharpCompress" Version="0.50.4" />
+    <PackageReference Include="System.IO.Hashing" Version="10.0.0" />
   </ItemGroup>
 
 </Project>

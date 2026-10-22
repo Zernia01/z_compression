@@ -37,7 +37,8 @@ public sealed record ArchiveProgress(
     long ProcessedBytes,
     long TotalBytes,
     double BytesPerSecond,
-    TimeSpan Elapsed);
+    TimeSpan Elapsed,
+    bool IsVerifying = false);
 
 public sealed record CompressionRequest(
     IReadOnlyList<string> Sources,

@@ -10,7 +10,7 @@ internal static class ArchiveDestinationDrag
         Marshal.ThrowExceptionForHR(OleInitialize(IntPtr.Zero));
         try
         {
-            using var data = new VirtualArchiveDataObject(entries, _ => throw new InvalidOperationException("Destination picking never exports content."), () => { });
+            using var data = new VirtualArchiveDataObject(CreatePreview(entries), _ => throw new InvalidOperationException("Destination picking never exports content."), () => { });
             var source = new DestinationDropSource(ShellDropDestination.Capture);
             // Expose names for Explorer's drag feedback, but cancel the shell drop before
             // it can start copying. The app extracts directly to the captured folder.
@@ -20,6 +20,11 @@ internal static class ArchiveDestinationDrag
         }
         finally { OleUninitialize(); }
     }
+
+    // Explorer receives only top-level names for its drag cue. Full archive paths
+    // remain in the app's manifest and are extracted after the destination is picked.
+    internal static IReadOnlyList<ArchiveExportEntry> CreatePreview(IReadOnlyList<ArchiveExportEntry> entries) =>
+        entries.Where(entry => !entry.Name.Contains('\\')).ToArray();
 
     [DllImport("ole32.dll")] private static extern int OleInitialize(IntPtr reserved);
     [DllImport("ole32.dll")] private static extern void OleUninitialize();

@@ -13,8 +13,8 @@ public static class ArchiveExportManifest
             var relative = selection.GetRelativePath(entry.Path);
             if (relative is null) continue;
             if (entry.IsLink) throw new InvalidDataException("Archive links cannot be exported.");
-            if (relative.Length >= 260 || relative.Split('/').Any(part => part.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0))
-                throw new InvalidDataException("The selected path cannot be represented as a Windows virtual file.");
+            if (relative.Split('/').Any(part => part.Length > 255 || part.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0))
+                throw new NotSupportedException($"Windows에서 만들 수 없는 파일 이름이 포함되어 있습니다. / Unsupported Windows file name: {entry.Path}");
             if (entry.OriginalSize < 0) throw new InvalidDataException("Archive entry has an invalid size.");
             var parts = relative.Split('/');
             for (var i = 1; i < parts.Length; i++)
@@ -44,7 +44,6 @@ public static class ArchiveExportManifest
         foreach (var entry in children)
         {
             var relative = name + "\\" + entry.Name;
-            if (relative.Length >= 260) throw new InvalidDataException("The archive export path is too long.");
             result.Add(entry with { Name = relative });
         }
         return result;

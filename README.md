@@ -107,6 +107,12 @@ On Windows 11, the Explorer compression command may appear under `Show more opti
 
 Generative AI tools, including OpenAI ChatGPT and Codex, were used as assistants during parts of this project's development and documentation. AI-generated suggestions and content were reviewed and edited by the project author before being incorporated.
 
+## 긴 경로 드래그 해제·ZIP 생성 검증 (1.2.8)
+
+압축 파일을 밖으로 끌어 풀 때 전체 상대 경로가 260자를 넘는다는 이유로 `Windows virtual file` 오류가 나던 제한을 제거했습니다. Windows 드래그 화면에는 최상위 이름만 제공하고, 앱이 원래의 전체 경로로 직접 해제합니다. Windows에서 만들 수 없는 이름은 압축 손상 대신 해당 이름을 포함한 경로 오류로 안내합니다.
+
+ZIP 생성 시 압축 스트림을 완전히 닫고 저장 버퍼를 플러시한 뒤, 별도 ZIP 리더로 전체 내용을 읽어 CRC·항목 수·파일 크기를 검사합니다. 검사가 통과한 뒤에만 최종 파일을 교체하고 100% 완료를 알립니다. 검사 중에는 진행 창에 검사 상태가 표시되며 취소도 가능합니다. 실패·취소 시 기존 압축 파일은 보존됩니다. 검사를 위해 ZIP 내용을 한 번 더 읽으므로 압축 완료까지 걸리는 시간은 파일 구성에 따라 늘어날 수 있습니다.
+
 ## 업데이트·휴대폰 ZIP 호환성·해제 성능 (1.2.7)
 
 새로 만드는 ZIP의 로컬 헤더와 중앙 디렉터리에 UTF-8 파일명 표기를 명시합니다. 일본어·중국어·한글 이름을 레거시 인코딩으로 추측하는 리더에서도 올바르게 구분할 수 있습니다. 기존 ZIP은 이 버전에서 다시 압축해야 적용됩니다.
