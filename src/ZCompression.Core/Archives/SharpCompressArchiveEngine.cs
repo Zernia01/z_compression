@@ -265,7 +265,12 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             BufferSize = 1024 * 1024,
         };
         if (request.Format != ArchiveFormat.SevenZip) writerOptions.CompressionLevel = request.Format == ArchiveFormat.Tar ? 0 : ToLevel(request.Level);
-        using (var writer = WriterFactory.OpenWriter(output, ToArchiveType(request.Format), writerOptions))
+        // Reserve ZIP64 entry headers before streaming: a compressed entry can grow
+        // past the 32-bit size limit even when the source is slightly smaller.
+        SharpCompress.Common.Options.IWriterOptions formatOptions = request.Format == ArchiveFormat.Zip
+            ? new SharpCompress.Writers.Zip.ZipWriterOptions(writerOptions) { UseZip64 = true }
+            : writerOptions;
+        using (var writer = WriterFactory.OpenWriter(output, ToArchiveType(request.Format), formatOptions))
         {
             foreach (var file in files)
             {

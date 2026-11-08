@@ -27,7 +27,7 @@ public static class ArchiveExportManifest
             result[relative] = new(relative.Replace('/', '\\'), entry.Path, entry.IsDirectory, entry.OriginalSize, entry.Modified, entry.IsEncrypted);
         }
         if (result.Count == 0) throw new InvalidDataException("No selected archive entries were found.");
-        if (result.Count > 1_000_000 || result.Values.Where(entry => !entry.IsDirectory).Sum(entry => entry.Size) > 100L * 1024 * 1024 * 1024)
+        if (result.Count > 1_000_000)
             throw new InvalidDataException("Archive selection exceeds extraction limits.");
         // Create parents first, then preserve archive order so solid readers can continue forward.
         return result.Values.Where(entry => entry.IsDirectory).OrderBy(entry => entry.Name.Count(character => character == '\\'))

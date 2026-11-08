@@ -60,7 +60,7 @@ public sealed record ExtractionRequest(
     string DestinationDirectory,
     string? Password = null,
     System.Text.Encoding? LegacyEncoding = null,
-    long MaximumExpandedBytes = 100L * 1024 * 1024 * 1024,
+    long MaximumExpandedBytes = long.MaxValue,
     int MaximumFileCount = 1_000_000,
     IReadOnlyList<string>? SelectedPaths = null,
     string RelativeRoot = "");
