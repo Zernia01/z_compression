@@ -43,10 +43,19 @@ public sealed class FileContentionTests
             var target = extract ? Path.Combine(output, "data.txt") : source;
             if (extract) await File.WriteAllTextAsync(target, "old");
             using var locked = new FileStream(target, FileMode.Open, FileAccess.Read, FileShare.None);
-            var release = Task.Run(async () => { await Task.Delay(350); locked.Dispose(); });
-            if (extract) await engine.ExtractAsync(new ExtractionRequest(archive, output));
-            else await engine.CompressAsync(new CompressionRequest([source], archive, ArchiveFormat.Zip));
-            await release;
+            // The operation blocks while retrying. Release independently of the thread pool,
+            // which may be busy with the large-archive tests on a small runner.
+            var release = Task.Factory.StartNew(() =>
+            {
+                Thread.Sleep(350);
+                locked.Dispose();
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            try
+            {
+                if (extract) await engine.ExtractAsync(new ExtractionRequest(archive, output));
+                else await engine.CompressAsync(new CompressionRequest([source], archive, ArchiveFormat.Zip));
+            }
+            finally { await release; }
             if (extract) Assert.AreEqual("locked content", await File.ReadAllTextAsync(target));
             else await engine.TestAsync(archive);
         }
