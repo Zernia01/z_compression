@@ -53,7 +53,8 @@ public sealed record ArchiveUpdateRequest(
     ArchiveFormat Format,
     string DestinationFolder = "",
     CompressionPreset Level = CompressionPreset.High,
-    string? Password = null);
+    string? Password = null,
+    System.Text.Encoding? LegacyEncoding = null);
 
 public sealed record ExtractionRequest(
     string ArchivePath,

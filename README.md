@@ -107,6 +107,10 @@ On Windows 11, the Explorer compression command may appear under `Show more opti
 
 Generative AI tools, including OpenAI ChatGPT and Codex, were used as assistants during parts of this project's development and documentation. AI-generated suggestions and content were reviewed and edited by the project author before being incorporated.
 
+## 압축 파일의 파일명 인코딩 (1.2.10)
+
+압축 파일을 열고 위쪽의 **파일명 인코딩** 메뉴에서 일본어 Shift-JIS/CP932, 한국어 CP949, 중국어 GBK·GB18030·Big5 등을 선택할 수 있습니다. 목록을 즉시 새로 읽으며 파일 열기, 압축 풀기, 드래그 해제에도 같은 설정이 적용됩니다. 선택은 앱을 실행하는 동안 해당 압축 파일에만 적용됩니다. ZIP에 UTF-8로 명시된 이름은 그대로 읽습니다.
+
 ## 대용량 ZIP·용량 제한 제거 (1.2.9)
 
 ZIP 생성·파일 추가 시 ZIP64 헤더 공간을 확보하여 단일 파일이나 전체 압축 파일이 4GB를 넘어도 저장할 수 있습니다. 작은 ZIP의 UTF-8 파일명과 생성 후 CRC 검증은 유지합니다. 일반 압축 해제와 밖으로 드래그하여 풀기에 있던 100GB 용량 제한도 제거했습니다. 실제 최대 크기는 저장 장치의 남은 공간과 파일 시스템·압축 형식의 한계를 따릅니다. FAT32 저장 장치는 파일 하나를 4GB 이상 저장할 수 없으므로 대용량 ZIP은 NTFS 또는 exFAT 저장 장치에 저장하세요.

@@ -57,7 +57,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         return Task.Run(() => UpdateCore(request, progress, cancellationToken), cancellationToken);
     }
 
-    public Task ExtractEntryAsync(string archivePath, string entryPath, string destinationPath, string? password = null, CancellationToken cancellationToken = default) =>
+    public Task ExtractEntryAsync(string archivePath, string entryPath, string destinationPath, string? password = null, CancellationToken cancellationToken = default, System.Text.Encoding? legacyEncoding = null) =>
         Task.Run(() =>
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(archivePath);
@@ -66,7 +66,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             cancellationToken.ThrowIfCancellationRequested();
             var normalized = entryPath.Replace('\\', '/').TrimStart('/');
             // Reading preceding entries is necessary to reconstruct the solid dictionary.
-            foreach (var (entry, openStream) in ReadEntries(archivePath, password, null, token: cancellationToken))
+            foreach (var (entry, openStream) in ReadEntries(archivePath, password, legacyEncoding, token: cancellationToken))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (entry.IsDirectory || !string.Equals((entry.Key ?? string.Empty).Replace('\\', '/').TrimStart('/'), normalized, StringComparison.Ordinal)) continue;
@@ -371,7 +371,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         Directory.CreateDirectory(workDirectory);
         try
         {
-            ExtractCore(new ExtractionRequest(archivePath, workDirectory, request.Password), progress, token);
+            ExtractCore(new ExtractionRequest(archivePath, workDirectory, request.Password, request.LegacyEncoding), progress, token);
             var destination = string.IsNullOrWhiteSpace(request.DestinationFolder)
                 ? workDirectory
                 : SafeExtractionPath.Resolve(workDirectory, request.DestinationFolder.Replace('\\', '/').Trim('/'));

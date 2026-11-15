@@ -81,7 +81,7 @@ internal static class Program
         { LastUpdate = request; return Task.CompletedTask; }
         public Task<IReadOnlyList<ArchiveEntryInfo>> ListAsync(string path, string? password = null, System.Text.Encoding? legacyEncoding = null, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<ArchiveEntryInfo>>([]);
         public Task ExtractAsync(ExtractionRequest request, IProgress<ArchiveProgress>? progress = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task ExtractEntryAsync(string path, string entry, string destination, string? password = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task ExtractEntryAsync(string path, string entry, string destination, string? password = null, CancellationToken cancellationToken = default, System.Text.Encoding? legacyEncoding = null) => throw new NotSupportedException();
         public Task TestAsync(string path, string? password = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }

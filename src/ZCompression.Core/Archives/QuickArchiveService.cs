@@ -28,7 +28,7 @@ public sealed class QuickArchiveService(IArchiveEngine engine)
     }
 
     public async Task<string> ExtractAsync(string archivePath, string? password = null,
-        IProgress<ArchiveProgress>? progress = null, CancellationToken cancellationToken = default, string? destinationDirectory = null)
+        IProgress<ArchiveProgress>? progress = null, CancellationToken cancellationToken = default, string? destinationDirectory = null, System.Text.Encoding? legacyEncoding = null)
     {
         var archive = Path.GetFullPath(archivePath);
         var parent = destinationDirectory is null ? Path.GetDirectoryName(archive)! : Path.GetFullPath(destinationDirectory);
@@ -37,7 +37,7 @@ public sealed class QuickArchiveService(IArchiveEngine engine)
         var staging = Path.Combine(parent, $".z-compression-{Guid.NewGuid():N}.extract");
         try
         {
-            await engine.ExtractAsync(new ExtractionRequest(archive, staging, password), progress, cancellationToken);
+            await engine.ExtractAsync(new ExtractionRequest(archive, staging, password, legacyEncoding), progress, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             return Publish(parent, name, "", staging, isDirectory: true, cancellationToken);
         }

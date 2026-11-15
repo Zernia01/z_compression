@@ -78,6 +78,34 @@ public partial class MainWindow : Window
                 () => _viewModel.CompressAsync(dialog.SelectedSources, dialog.DestinationPath, dialog.SelectedFormat, dialog.SelectedLevel, dialog.SelectedPassword, dialog.SelectedVolumeSize));
     }
 
+    private void OnArchiveEncoding(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.IsBusy || !_viewModel.HasArchive || sender is not FrameworkElement button) return;
+        var menu = new System.Windows.Controls.ContextMenu
+        {
+            PlacementTarget = button,
+            Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom,
+        };
+        var archive = _viewModel.CurrentArchivePath;
+        var selected = _viewModel.GetArchiveEncoding(archive);
+        foreach (var choice in ZCompression.Core.Encoding.LegacyEncodingService.Choices)
+        {
+            var item = new System.Windows.Controls.MenuItem
+            {
+                Header = choice.Encoding is null ? LocalizationManager.Instance["ArchiveDefaultEncoding"] : choice.DisplayName,
+                IsCheckable = true,
+                IsChecked = choice == selected,
+            };
+            item.Click += async (_, _) =>
+            {
+                if (!_viewModel.IsBusy && _viewModel.CurrentArchivePath == archive)
+                    await RunUiAction(() => _viewModel.SetArchiveEncodingAsync(choice));
+            };
+            menu.Items.Add(item);
+        }
+        menu.IsOpen = true;
+    }
+
     private async void OnTest(object sender, RoutedEventArgs e)
     {
         var archivePath = _viewModel.CurrentArchivePath;

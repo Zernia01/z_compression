@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using ZCompression.Core.Archives;
 using ZCompression.Core.Collections;
+using ZCompression.Core.Encoding;
 using ZCompression.Core.Localization;
 using ZCompression.Core.Settings;
 
@@ -32,6 +33,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private ArchiveBrowserItem? _selectedBrowserItem;
     private string _currentFolder = "";
     private readonly Dictionary<string, string> _archivePasswords = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, EncodingChoice> _archiveEncodings = new(StringComparer.OrdinalIgnoreCase);
     public Func<string, string?>? RequestArchivePassword { get; set; }
 
     public MainViewModel(IArchiveEngine engine, ILocalizationService localization, ISettingsService settingsService, AppSettings settings)
@@ -82,11 +84,29 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public string BrowserItemCountText => string.Format(_localization["ItemCount"], BrowserItems.Count);
     public string SearchText { get => _searchText; set { if (Set(ref _searchText, value)) RebuildBrowserItems(); } }
 
+    public EncodingChoice GetArchiveEncoding(string path) =>
+        _archiveEncodings.GetValueOrDefault(Path.GetFullPath(SplitArchiveService.GetFirstVolume(path))) ?? LegacyEncodingService.Choices[0];
+
+    public async Task SetArchiveEncodingAsync(EncodingChoice choice) => await WithOperation(async token =>
+    {
+        var path = CurrentArchivePath;
+        if (string.IsNullOrEmpty(path) || GetArchiveEncoding(path) == choice) return;
+        Status = _localization["Opening"];
+        var entries = await WithArchivePassword(path, password => _engine.ListAsync(path, password, choice.Encoding, token));
+        token.ThrowIfCancellationRequested();
+        if (path != CurrentArchivePath) return;
+        if (choice.Encoding is null) _archiveEncodings.Remove(path);
+        else _archiveEncodings[path] = choice;
+        CurrentFolder = ""; SelectedEntry = null; SelectedBrowserItem = null;
+        Entries.ReplaceAll(entries); SearchText = ""; RebuildBrowserItems();
+        Status = string.Format(_localization["EntryCount"], entries.Count);
+    });
+
     public async Task OpenArchiveAsync(string path) => await WithOperation(async token =>
     {
         Status = _localization["Opening"];
         path = SplitArchiveService.GetFirstVolume(path);
-        var entries = await WithArchivePassword(path, password => _engine.ListAsync(path, password, cancellationToken: token));
+        var entries = await WithArchivePassword(path, password => _engine.ListAsync(path, password, GetArchiveEncoding(path).Encoding, token));
         Entries.ReplaceAll(entries);
         CurrentArchivePath = Path.GetFullPath(path); CurrentArchive = Path.GetFileName(path); CurrentFolder = ""; SelectedEntry = null; SelectedBrowserItem = null; RebuildBrowserItems(); Status = string.Format(_localization["EntryCount"], entries.Count);
     });
@@ -100,6 +120,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         var entries = await _engine.ListAsync(destination, password, cancellationToken: token);
         var fullPath = Path.GetFullPath(destination);
         _archivePasswords.Remove(fullPath);
+        _archiveEncodings.Remove(fullPath);
         if (password is not null) _archivePasswords[fullPath] = password;
         Entries.ReplaceAll(entries);
         CurrentArchivePath = Path.GetFullPath(destination); CurrentArchive = Path.GetFileName(destination);
@@ -110,7 +131,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public async Task ExtractAsync(string archive, string destination) => await WithOperation(async token =>
     {
         Status = _localization["Extracting"];
-        await WithArchivePassword(archive, password => _engine.ExtractAsync(new ExtractionRequest(archive, destination, password), CreateProgress(), token));
+        await WithArchivePassword(archive, password => _engine.ExtractAsync(new ExtractionRequest(archive, destination, password, GetArchiveEncoding(archive).Encoding), CreateProgress(), token));
         Status = _localization["ExtractionComplete"];
     });
 
@@ -119,7 +140,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         if (string.IsNullOrWhiteSpace(CurrentArchivePath)) throw new InvalidOperationException("No archive is open.");
         Status = _localization["Compressing"];
         var format = FormatFromPath(CurrentArchivePath);
-        await WithArchivePassword(CurrentArchivePath, password => _engine.UpdateAsync(new ArchiveUpdateRequest(CurrentArchivePath, sources, format, CurrentFolder, Settings.GetDefaultCompressionLevel(), password), CreateProgress(), token));
+        await WithArchivePassword(CurrentArchivePath, password => _engine.UpdateAsync(new ArchiveUpdateRequest(CurrentArchivePath, sources, format, CurrentFolder, Settings.GetDefaultCompressionLevel(), password, GetArchiveEncoding(CurrentArchivePath).Encoding), CreateProgress(), token));
+        _archiveEncodings.Remove(CurrentArchivePath);
         var entries = await WithArchivePassword(CurrentArchivePath, password => _engine.ListAsync(CurrentArchivePath, password, cancellationToken: token));
         Entries.ReplaceAll(entries);
         SelectedEntry = null; SelectedBrowserItem = null; RebuildBrowserItems();
@@ -147,7 +169,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public async Task QuickExtractAsync(string archive) => await WithOperation(async token =>
     {
         Status = _localization["Extracting"];
-        await WithArchivePassword(archive, password => new QuickArchiveService(_engine).ExtractAsync(archive, password, CreateProgress(), token));
+        await WithArchivePassword(archive, password => new QuickArchiveService(_engine).ExtractAsync(archive, password, CreateProgress(), token, legacyEncoding: GetArchiveEncoding(archive).Encoding));
         Status = _localization["ExtractionComplete"];
     });
 
@@ -167,7 +189,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Percent = (position * 100d + value.Percent) / paths.Length,
                 CurrentFile = $"[{position + 1}/{paths.Length}] {Path.GetFileName(archive)} · {value.CurrentFile}"
             }));
-            await WithArchivePassword(archive, password => new QuickArchiveService(_engine).ExtractAsync(archive, password, batchProgress, token, destination));
+            await WithArchivePassword(archive, password => new QuickArchiveService(_engine).ExtractAsync(archive, password, batchProgress, token, destination, GetArchiveEncoding(archive).Encoding));
         }
         ProgressPercent = 100;
         Status = _localization["ExtractionComplete"];
@@ -218,7 +240,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         await WithOperation(async token =>
         {
             Status = string.Format(_localization["OpeningFile"], item.Name);
-            await WithArchivePassword(CurrentArchivePath, password => _engine.ExtractEntryAsync(CurrentArchivePath, item.Path, destination, password, token));
+            await WithArchivePassword(CurrentArchivePath, password => _engine.ExtractEntryAsync(CurrentArchivePath, item.Path, destination, password, token, GetArchiveEncoding(CurrentArchivePath).Encoding));
             Status = _localization["Ready"];
         });
         return destination;
@@ -242,7 +264,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         var request = await prepare(token);
         if (request is null) { Status = _localization["Ready"]; return; }
         Status = _localization["Extracting"];
-        await _engine.ExtractAsync(request, CreateProgress(), token);
+        await _engine.ExtractAsync(request with { LegacyEncoding = GetArchiveEncoding(request.ArchivePath).Encoding }, CreateProgress(), token);
         Status = _localization["ExtractionComplete"];
     });
 
@@ -346,6 +368,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             catch (SharpCompress.Common.CryptographicException) when (RequestArchivePassword is not null)
             {
                 _archivePasswords.Remove(fullPath);
+        _archiveEncodings.Remove(fullPath);
                 password = RequestArchivePassword(archivePath);
                 if (password is null) throw new OperationCanceledException();
             }
