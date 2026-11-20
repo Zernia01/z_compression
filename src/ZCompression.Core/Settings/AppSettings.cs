@@ -20,6 +20,8 @@ public sealed record AppSettings
     public string OperationPriority { get; init; } = "normal";
     public string CompressShortcut { get; init; } = "Ctrl+N";
     public string ExtractShortcut { get; init; } = "Ctrl+E";
+    public string CompressSeparatelyShortcut { get; init; } = "Ctrl+I";
+    public bool AvoidDuplicateExtractionFolder { get; init; }
 }
 
 public interface ISettingsService

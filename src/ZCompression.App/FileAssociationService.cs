@@ -82,7 +82,10 @@ internal static class FileAssociationService
     private static void RegisterContextMenus(string executable, AppSettings settings, ShellRegistrationBatch registration)
     {
         foreach (var itemType in new[] { "*", "Directory" })
-            RegisterMenu(registration, $@"Software\Classes\{itemType}\shell\ZCompression.Compress", ExplorerMenuShortcut.BuildLabel(LocalizationManager.Instance["ShellCompressNow"], settings.CompressShortcut), "--compress-here", executable);
+        {
+            RegisterMenu(registration, $@"Software\Classes\{itemType}\shell\ZCompression.Compress", ExplorerMenuShortcut.BuildLabel(LocalizationManager.Instance["CompressTogether"], settings.CompressShortcut), "--compress-here", executable);
+            RegisterMenu(registration, $@"Software\Classes\{itemType}\shell\ZCompression.CompressSeparately", ExplorerMenuShortcut.BuildLabel(LocalizationManager.Instance["CompressSeparately"], settings.CompressSeparatelyShortcut), "--compress-each", executable);
+        }
         // SystemFileAssociations keeps extraction available when another app is the default.
         foreach (var extension in SupportedExtensions)
             RegisterMenu(registration, $@"Software\Classes\SystemFileAssociations\{extension}\shell\ZCompression.Extract", ExplorerMenuShortcut.BuildLabel(LocalizationManager.Instance["ShellExtractNow"], settings.ExtractShortcut), "--extract-here", executable);

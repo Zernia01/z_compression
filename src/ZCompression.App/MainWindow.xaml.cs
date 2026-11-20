@@ -42,17 +42,27 @@ public partial class MainWindow : Window
 
     private async void OnExtract(object sender, RoutedEventArgs e) => await ExtractArchiveAsync();
 
-    private async void OnExtractMany(object sender, RoutedEventArgs e)
+    private async void OnExtractMany(object sender, RoutedEventArgs e) => await ExtractManyWithPasswordAsync(false);
+    private async void OnExtractManyPassword(object sender, RoutedEventArgs e) => await ExtractManyWithPasswordAsync(true);
+
+    private async Task ExtractManyWithPasswordAsync(bool useSharedPassword)
     {
         if (_viewModel.IsBusy) return;
         var dialog = ArchiveOpenDialog();
         dialog.Multiselect = true;
         dialog.Title = LocalizationManager.Instance["ExtractMany"];
         if (dialog.ShowDialog(this) != true) return;
+        string? sharedPassword = null;
+        if (useSharedPassword)
+        {
+            var passwordDialog = new ArchivePasswordWindow(LocalizationManager.Instance["ExtractSharedPassword"]) { Owner = this };
+            if (passwordDialog.ShowDialog() != true) return;
+            sharedPassword = passwordDialog.Password;
+        }
         var destination = SelectFolder(LocalizationManager.Instance["SelectExtractionDestination"]);
         if (destination is not null)
             await RunWithProgressAsync(LocalizationManager.Instance["ExtractMany"], $"{dialog.FileNames.Length}", true,
-                () => _viewModel.ExtractManyAsync(dialog.FileNames, destination));
+                () => _viewModel.ExtractManyAsync(dialog.FileNames, destination, sharedPassword));
     }
 
     private async Task ExtractArchiveAsync()
@@ -70,12 +80,14 @@ public partial class MainWindow : Window
 
     private async void OnNewArchive(object sender, RoutedEventArgs e) => await CreateArchiveFromSourcesAsync();
 
-    public async Task CreateArchiveFromSourcesAsync(IEnumerable<string>? initialSources = null)
+    public async Task CreateArchiveFromSourcesAsync(IEnumerable<string>? initialSources = null, bool separate = false)
     {
-        var dialog = new NewArchiveWindow(initialSources, _viewModel.Settings) { Owner = this };
+        var dialog = new NewArchiveWindow(initialSources, _viewModel.Settings, separate) { Owner = this };
         if (dialog.ShowDialog() == true)
             await RunWithProgressAsync(LocalizationManager.Instance["CompressAction"], Path.GetFileName(dialog.DestinationPath), false,
-                () => _viewModel.CompressAsync(dialog.SelectedSources, dialog.DestinationPath, dialog.SelectedFormat, dialog.SelectedLevel, dialog.SelectedPassword, dialog.SelectedVolumeSize));
+                () => dialog.CompressSeparately
+                    ? _viewModel.CompressSeparatelyAsync(dialog.SelectedSources, Path.GetDirectoryName(dialog.DestinationPath), dialog.SelectedFormat, dialog.SelectedLevel, dialog.SelectedPassword, dialog.SelectedVolumeSize)
+                    : _viewModel.CompressAsync(dialog.SelectedSources, dialog.DestinationPath, dialog.SelectedFormat, dialog.SelectedLevel, dialog.SelectedPassword, dialog.SelectedVolumeSize));
     }
 
     private void OnArchiveEncoding(object sender, RoutedEventArgs e)
@@ -167,6 +179,11 @@ public partial class MainWindow : Window
         {
             e.Handled = true;
             await ExtractArchiveAsync();
+        }
+        else if (ShortcutGesture.Matches(_viewModel.Settings.CompressSeparatelyShortcut, key, Keyboard.Modifiers))
+        {
+            e.Handled = true;
+            await CreateArchiveFromSourcesAsync(separate: true);
         }
     }
 

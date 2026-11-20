@@ -15,7 +15,7 @@ public partial class App : Application
     private async void OnStartup(object sender, StartupEventArgs e)
     {
         var args = e.Args;
-        if (args.FirstOrDefault() is "--compress-here" or "--extract-here")
+        if (args.FirstOrDefault() is "--compress-here" or "--compress-each" or "--extract-here")
         {
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
             try
@@ -48,6 +48,7 @@ public partial class App : Application
         var viewModel = new MainViewModel(new SharpCompressArchiveEngine(), localization, settingsService, settings);
         var command = e.Args.FirstOrDefault();
         if (command?.Equals("--compress-here", StringComparison.OrdinalIgnoreCase) == true ||
+            command?.Equals("--compress-each", StringComparison.OrdinalIgnoreCase) == true ||
             command?.Equals("--extract-here", StringComparison.OrdinalIgnoreCase) == true)
         {
             await RunQuickOperationAsync(viewModel, args, command.Equals("--extract-here", StringComparison.OrdinalIgnoreCase));
@@ -97,6 +98,7 @@ public partial class App : Application
             {
                 await viewModel.ExtractManyAsync(sources);
             }
+            else if (args[0] == "--compress-each") await viewModel.CompressSeparatelyAsync(sources);
             else await viewModel.QuickCompressAsync(sources);
         }
         catch (OperationCanceledException) { }

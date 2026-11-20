@@ -90,11 +90,13 @@
                     </StackPanel>
                     <TextBlock Text="{local:Loc SplitArchiveHint}" TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,6,0,0"/>
                 </StackPanel>
-                <StackPanel x:Name="RarOptionsPanel" Grid.Row="3" Grid.ColumnSpan="3" Margin="0,12,0,0" Visibility="Collapsed">
-                    <TextBlock Text="{local:Loc RarCreationHint}" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryTextBrush}"/>
+                <StackPanel Grid.Row="3" Grid.ColumnSpan="3" Margin="0,12,0,0">
+                    <CheckBox x:Name="SeparateEnabled" Content="{local:Loc CompressSeparately}" Margin="0,0,0,8"/>
+                    <TextBlock x:Name="RarOptionsPanel" Text="{local:Loc RarCreationHint}" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryTextBrush}" Visibility="Collapsed"/>
+                    <CheckBox x:Name="PasswordEnabled" Content="{local:Loc UsePassword}" Margin="0,8,0,0"/>
                     <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                         <TextBlock Text="{local:Loc OptionalPassword}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                        <PasswordBox x:Name="PasswordBox" Width="220" Padding="7"/>
+                        <PasswordBox x:Name="PasswordBox" Width="220" Padding="7" IsEnabled="{Binding IsChecked, ElementName=PasswordEnabled}"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>

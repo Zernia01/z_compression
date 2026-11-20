@@ -101,6 +101,8 @@
                             <ComboBoxItem Tag="Fast" Content="{local:Loc Fast}"/><ComboBoxItem Tag="Normal" Content="{local:Loc Normal}"/>
                             <ComboBoxItem Tag="High" Content="{local:Loc High}"/><ComboBoxItem Tag="Ultra" Content="{local:Loc Ultra}"/>
                         </ComboBox>
+                        <CheckBox x:Name="AvoidDuplicateFolderBox" Content="{local:Loc AvoidDuplicateFolder}" Margin="0,24,0,0" Checked="OnExtractionFolderChanged" Unchecked="OnExtractionFolderChanged"/>
+                        <TextBlock Text="{local:Loc AvoidDuplicateFolderHint}" TextWrapping="Wrap" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,8,0,0"/>
                     </StackPanel>
 
                     <StackPanel x:Name="ShortcutsPanel" Visibility="Collapsed">
@@ -109,7 +111,7 @@
                         <Separator Background="{DynamicResource BorderBrush}" />
                         <Grid Margin="0,22,0,0">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="220"/></Grid.ColumnDefinitions>
-                            <StackPanel VerticalAlignment="Center"><TextBlock Text="{local:Loc CompressShortcut}" FontWeight="SemiBold"/><TextBlock Text="{local:Loc CompressAction}" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,12,0"/></StackPanel>
+                            <StackPanel VerticalAlignment="Center"><TextBlock Text="{local:Loc CompressTogether}" FontWeight="SemiBold"/><TextBlock Text="{local:Loc CompressAction}" FontSize="11" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,4,12,0"/></StackPanel>
                             <Button x:Name="CompressShortcutButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Click="OnShortcutCaptureClick" Tag="compress" />
                         </Grid>
                         <Grid Margin="0,16,0,0">
@@ -118,6 +120,11 @@
                             <Button x:Name="ExtractShortcutButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Click="OnShortcutCaptureClick" Tag="extract" />
                         </Grid>
                         <TextBlock Text="{local:Loc ShortcutCaptureHintV2}" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap" Margin="0,24,0,0" />
+                        <Grid Margin="0,16,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="220"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="{local:Loc CompressSeparately}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <Button x:Name="SeparateShortcutButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Click="OnShortcutCaptureClick" Tag="separate"/>
+                        </Grid>
                         <TextBlock Text="{local:Loc ExplorerShortcutHint}" Foreground="{DynamicResource SecondaryTextBrush}" TextWrapping="Wrap" Margin="0,10,0,0" />
                         <TextBlock x:Name="ShortcutValidationText" Foreground="#E35D6A" TextWrapping="Wrap" Margin="0,12,0,0" />
                     </StackPanel>
@@ -163,7 +170,7 @@
                         <Separator Background="{DynamicResource BorderBrush}" />
                         <Image Source="/Assets/icon.png" Width="58" Height="58" HorizontalAlignment="Left" Margin="0,24,0,12"/>
                         <TextBlock Text="z_compression" FontSize="20" FontWeight="SemiBold" />
-                        <TextBlock Text="Version 1.2.10 · MIT License" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0" />
+                        <TextBlock Text="Version 1.2.11 · MIT License" Foreground="{DynamicResource SecondaryTextBrush}" Margin="0,5,0,0" />
                         <TextBlock Text="{local:Loc PrivacyStatement}" Margin="0,24,0,0" />
                         <Button Style="{StaticResource AccentButton}" Content="☕  Buy Me a Coffee" HorizontalAlignment="Left" Margin="0,22,0,0" Click="OnDonate" />
                     </StackPanel>

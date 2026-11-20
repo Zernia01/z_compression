@@ -169,11 +169,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public async Task QuickExtractAsync(string archive) => await WithOperation(async token =>
     {
         Status = _localization["Extracting"];
-        await WithArchivePassword(archive, password => new QuickArchiveService(_engine).ExtractAsync(archive, password, CreateProgress(), token, legacyEncoding: GetArchiveEncoding(archive).Encoding));
+        await WithArchivePassword(archive, password => new QuickArchiveService(_engine).ExtractAsync(archive, password, CreateProgress(), token, legacyEncoding: GetArchiveEncoding(archive).Encoding, avoidDuplicateFolder: Settings.AvoidDuplicateExtractionFolder));
         Status = _localization["ExtractionComplete"];
     });
 
-    public async Task ExtractManyAsync(IReadOnlyList<string> archives, string? destination = null) => await WithOperation(async token =>
+    public async Task ExtractManyAsync(IReadOnlyList<string> archives, string? destination = null, string? sharedPassword = null) => await WithOperation(async token =>
     {
         var paths = archives.Select(SplitArchiveService.GetFirstVolume).Select(Path.GetFullPath).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         if (paths.Length == 0 || paths.Any(path => !File.Exists(path) || !IsArchivePath(path))) throw new InvalidDataException("Select supported archives.");
@@ -182,6 +182,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             token.ThrowIfCancellationRequested();
             var archive = paths[index];
+            if (sharedPassword is not null) _archivePasswords[archive] = sharedPassword;
             Status = $"{_localization["Extracting"]} ({index + 1}/{paths.Length}) · {Path.GetFileName(archive)}";
             var position = index;
             var batchProgress = new InlineProgress<ArchiveProgress>(value => progress.Report(value with
@@ -189,13 +190,40 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Percent = (position * 100d + value.Percent) / paths.Length,
                 CurrentFile = $"[{position + 1}/{paths.Length}] {Path.GetFileName(archive)} · {value.CurrentFile}"
             }));
-            await WithArchivePassword(archive, password => new QuickArchiveService(_engine).ExtractAsync(archive, password, batchProgress, token, destination, GetArchiveEncoding(archive).Encoding));
+            await WithArchivePassword(archive, password => new QuickArchiveService(_engine).ExtractAsync(archive, password, batchProgress, token, destination, GetArchiveEncoding(archive).Encoding, Settings.AvoidDuplicateExtractionFolder));
+            if (sharedPassword is not null && _archivePasswords.TryGetValue(archive, out var accepted)) sharedPassword = accepted;
         }
         ProgressPercent = 100;
         Status = _localization["ExtractionComplete"];
     });
 
     private sealed class InlineProgress<T>(Action<T> report) : IProgress<T> { public void Report(T value) => report(value); }
+    public async Task CompressSeparatelyAsync(IReadOnlyList<string> sources, string? destination = null, ArchiveFormat? format = null, CompressionPreset? level = null, string? password = null, long? volumeSize = null) => await WithOperation(async token =>
+    {
+        var paths = sources.Select(Path.GetFullPath).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        IProgress<ArchiveProgress> progress = CreateProgress();
+        for (var index = 0; index < paths.Length; index++)
+        {
+            token.ThrowIfCancellationRequested();
+            var position = index;
+            Status = $"{_localization["CompressSeparately"]} ({index + 1}/{paths.Length})";
+            var batchProgress = new InlineProgress<ArchiveProgress>(value => progress.Report(value with { Percent = (position * 100d + value.Percent) / paths.Length }));
+            var selectedFormat = format ?? Settings.GetDefaultArchiveFormat();
+            var selectedLevel = level ?? Settings.GetDefaultCompressionLevel();
+            if (volumeSize is { } size)
+            {
+                var parent = destination ?? Path.GetDirectoryName(paths[index])!;
+                var name = Directory.Exists(paths[index]) ? Path.GetFileName(paths[index]) : Path.GetFileNameWithoutExtension(paths[index]);
+                var extension = selectedFormat switch { ArchiveFormat.SevenZip => ".7z", ArchiveFormat.Rar => ".rar", ArchiveFormat.Tar => ".tar", ArchiveFormat.TarGZip => ".tar.gz", _ => ".zip" };
+                var output = Path.Combine(parent, name + extension);
+                for (var number = 2; File.Exists(output) || Directory.Exists(output) || File.Exists(output + ".001"); number++)
+                    output = Path.Combine(parent, name + $" ({number})" + extension);
+                await new SplitArchiveService(_engine).CompressAsync(new CompressionRequest([paths[index]], output, selectedFormat, selectedLevel, password), size, batchProgress, token);
+            }
+            else await new QuickArchiveService(_engine).CompressAsync([paths[index]], selectedFormat, selectedLevel, batchProgress, token, destination, password);
+        }
+        Status = _localization["CompressionComplete"];
+    });
     public void ClearArchive()
     {
         _archivePasswords.Clear();
@@ -277,14 +305,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public void SetLanguage(string language) { Settings = Settings with { Language = language }; _localization.SetCulture(language); }
     public void SetDefaultCompressionLevel(CompressionPreset level) => Settings = Settings with { DefaultCompressionLevel = level.ToString().ToLowerInvariant() };
     public void SetDefaultArchiveFormat(ArchiveFormat format) => Settings = Settings with { DefaultArchiveFormat = format.ToString().ToLowerInvariant() };
+    public void SetAvoidDuplicateExtractionFolder(bool enabled) => Settings = Settings with { AvoidDuplicateExtractionFolder = enabled };
     public void SetTheme(string theme) => Settings = Settings with { Theme = theme };
     public void SetCpuThreads(int threads) => Settings = Settings with { CpuThreads = Math.Max(0, threads) };
     public void SetOperationPriority(string priority) => Settings = Settings with { OperationPriority = priority };
     public void SetCheckForUpdatesAtStartup(bool enabled) => Settings = Settings with { CheckForUpdatesAtStartup = enabled };
-    public void SetShortcuts(string compressShortcut, string extractShortcut) => Settings = Settings with
+    public void SetShortcuts(string compressShortcut, string extractShortcut, string? separateShortcut = null) => Settings = Settings with
     {
         CompressShortcut = compressShortcut,
         ExtractShortcut = extractShortcut,
+        CompressSeparatelyShortcut = separateShortcut ?? Settings.CompressSeparatelyShortcut,
     };
     public async Task SaveSettingsAsync()
     {
@@ -365,10 +395,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 if (password is not null) _archivePasswords[fullPath] = password;
                 return result;
             }
-            catch (SharpCompress.Common.CryptographicException) when (RequestArchivePassword is not null)
+            catch (Exception exception) when (RequestArchivePassword is not null &&
+                (exception is SharpCompress.Common.CryptographicException ||
+                 exception is SharpCompress.Common.InvalidFormatException && exception.Message.Equals("bad password", StringComparison.OrdinalIgnoreCase)))
             {
                 _archivePasswords.Remove(fullPath);
-        _archiveEncodings.Remove(fullPath);
                 password = RequestArchivePassword(archivePath);
                 if (password is null) throw new OperationCanceledException();
             }

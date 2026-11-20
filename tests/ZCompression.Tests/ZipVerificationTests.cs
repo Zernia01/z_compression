@@ -33,7 +33,9 @@ public sealed class ZipVerificationTests
     }
 
     [TestMethod]
-    public async Task CancelVerificationKeepsThePreviousArchive()
+    [DataRow(null)]
+    [DataRow("password")]
+    public async Task CancelVerificationKeepsThePreviousArchive(string? password)
     {
         var root = Root();
         try
@@ -42,12 +44,12 @@ public sealed class ZipVerificationTests
             var destination = Path.Combine(root, "archive.zip");
             await File.WriteAllTextAsync(source, "original");
             var engine = new SharpCompressArchiveEngine();
-            await engine.CompressAsync(new CompressionRequest([source], destination, ArchiveFormat.Zip));
+            await engine.CompressAsync(new CompressionRequest([source], destination, ArchiveFormat.Zip, Password: password));
             var original = await File.ReadAllBytesAsync(destination);
             await File.WriteAllTextAsync(source, "replacement");
             using var cancellation = new CancellationTokenSource();
             var progress = new Immediate(value => { if (value.IsVerifying) cancellation.Cancel(); });
-            await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => engine.CompressAsync(new CompressionRequest([source], destination, ArchiveFormat.Zip), progress, cancellation.Token));
+            await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => engine.CompressAsync(new CompressionRequest([source], destination, ArchiveFormat.Zip, Password: password), progress, cancellation.Token));
             CollectionAssert.AreEqual(original, await File.ReadAllBytesAsync(destination));
             Assert.IsEmpty(Directory.GetFiles(root, ".z-compression-*"));
         }

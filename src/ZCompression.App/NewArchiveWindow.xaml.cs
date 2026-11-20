@@ -11,11 +11,12 @@ namespace ZCompression.App;
 
 public partial class NewArchiveWindow : Window, INotifyPropertyChanged
 {
-    public NewArchiveWindow(IEnumerable<string>? initialSources = null, AppSettings? settings = null)
+    public NewArchiveWindow(IEnumerable<string>? initialSources = null, AppSettings? settings = null, bool separate = false)
     {
         InitializeComponent();
         MaxHeight = SystemParameters.WorkArea.Height;
         DataContext = this;
+        SeparateEnabled.IsChecked = separate;
         LocationBox.Text = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
         FileNameBox.Text = LocalizationManager.Instance["DefaultArchiveName"];
         settings ??= new AppSettings();
@@ -35,7 +36,8 @@ public partial class NewArchiveWindow : Window, INotifyPropertyChanged
     public ArchiveFormat SelectedFormat { get; private set; } = ArchiveFormat.Zip;
     public CompressionPreset SelectedLevel { get; private set; } = CompressionPreset.High;
     public long? SelectedVolumeSize { get; private set; }
-    public string? SelectedPassword => SelectedFormat == ArchiveFormat.Rar && PasswordBox.Password.Length > 0 ? PasswordBox.Password : null;
+    public bool CompressSeparately => SeparateEnabled.IsChecked == true;
+    public string? SelectedPassword => PasswordEnabled.IsChecked == true ? PasswordBox.Password : null;
 
     private void OnAddFiles(object sender, RoutedEventArgs e)
     {
@@ -78,6 +80,11 @@ public partial class NewArchiveWindow : Window, INotifyPropertyChanged
         if (FileNameBox.Text.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0) { ValidationText.Text = LocalizationManager.Instance["ValidationInvalidName"]; return; }
 
         SelectedFormat = ParseEnumTag(FormatBox, ArchiveFormat.Zip);
+        if (PasswordEnabled.IsChecked == true && (string.IsNullOrEmpty(PasswordBox.Password) || SelectedFormat is not (ArchiveFormat.Zip or ArchiveFormat.Rar)))
+        {
+            ValidationText.Text = LocalizationManager.Instance["PasswordCreationHint"];
+            return;
+        }
         if (SelectedFormat == ArchiveFormat.Rar && RarCommandLine.FindExecutable() is null)
         {
             ValidationText.Text = LocalizationManager.Instance["RarToolRequired"];

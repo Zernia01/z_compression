@@ -19,7 +19,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
     private static readonly IReadOnlyDictionary<ArchiveFormat, ArchiveCapabilities> Supported =
         new Dictionary<ArchiveFormat, ArchiveCapabilities>
         {
-            [ArchiveFormat.Zip] = new(true, true, false, true, "Encrypted ZIP reading is supported; creation is not exposed by this engine version."),
+            [ArchiveFormat.Zip] = new(true, true, true, true),
             [ArchiveFormat.SevenZip] = new(true, true, false, true, "7Z AES creation is not exposed by the selected engine."),
             [ArchiveFormat.Tar] = new(true, true, false, true),
             [ArchiveFormat.TarGZip] = new(true, true, false, true),
@@ -218,7 +218,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             RarCommandLine.Compress(request, progress, token, _rarExecutablePath);
             return;
         }
-        if (!string.IsNullOrEmpty(request.Password)) throw new NotSupportedException("Encrypted archive creation is not supported by the selected engine.");
+        if (!string.IsNullOrEmpty(request.Password) && request.Format != ArchiveFormat.Zip) throw new NotSupportedException("Password creation is supported for ZIP and RAR.");
         var destination = Path.GetFullPath(request.Destination);
         if (request.Sources.Any(source => Path.GetFullPath(source).Equals(destination, StringComparison.OrdinalIgnoreCase)))
             throw new InvalidDataException("The archive destination cannot replace a selected source file.");
@@ -230,7 +230,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             var writingProgress = request.Format == ArchiveFormat.Zip && progress is not null ? new ZipWritingProgress(progress) : progress;
             var expected = WriteArchiveCore(request with { Destination = temporary }, destination, writingProgress, token);
             if (request.Format == ArchiveFormat.Zip)
-                ZipIntegrityVerifier.Verify(temporary, progress, token, expected.Count, expected.Bytes);
+                ZipIntegrityVerifier.Verify(temporary, progress, token, expected.Count, expected.Bytes, request.Password);
             TransientFileAccess.Run(() =>
             {
                 if (File.Exists(destination)) File.Replace(temporary, destination, null);
@@ -257,6 +257,37 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         var watch = Stopwatch.StartNew();
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(request.Destination))!);
 
+        if (!string.IsNullOrEmpty(request.Password))
+        {
+            using var encryptedOutput = new FileStream(request.Destination, FileMode.Create, FileAccess.Write, FileShare.None, ArchiveReadBufferSize);
+            using (var zip = new ICSharpCode.SharpZipLib.Zip.ZipOutputStream(encryptedOutput) { IsStreamOwner = false, Password = request.Password, UseZip64 = ICSharpCode.SharpZipLib.Zip.UseZip64.On })
+            {
+                zip.SetLevel(ToLevel(request.Level));
+                foreach (var file in files)
+                {
+                    token.ThrowIfCancellationRequested();
+                    var entry = new ICSharpCode.SharpZipLib.Zip.ZipEntry(file.EntryName)
+                    {
+                        IsUnicodeText = true,
+                        DateTime = file.IsDirectory ? Directory.GetLastWriteTime(file.FullPath) : File.GetLastWriteTime(file.FullPath),
+                        Size = file.IsDirectory ? 0 : new FileInfo(file.FullPath).Length,
+                        AESKeySize = file.IsDirectory ? 0 : 256,
+                    };
+                    zip.PutNextEntry(entry);
+                    if (!file.IsDirectory)
+                    {
+                        using var input = TransientFileAccess.Run(() => new FileStream(file.FullPath, FileMode.Open, FileAccess.Read, FileShare.Read, ArchiveReadBufferSize), token);
+                        input.CopyToAsync(zip, ArchiveReadBufferSize, token).GetAwaiter().GetResult();
+                        processed += input.Length;
+                    }
+                    zip.CloseEntry();
+                    Report(progress, file.EntryName, ++completed, files.Length, processed, total, watch.Elapsed);
+                }
+                zip.Finish();
+            }
+            encryptedOutput.Flush(flushToDisk: true);
+            return (files.Length, total);
+        }
         using var output = new FileStream(request.Destination, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024, FileOptions.SequentialScan);
         var writerOptions = new WriterOptions(ToCompressionType(request.Format))
         {
@@ -478,7 +509,9 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
             }
             else
             {
-                using var splitArchive = ArchiveFactory.OpenArchive(volumes, options);
+                using IArchive splitArchive = GetExtensionHint(archivePath) == "zip"
+                    ? SharpCompress.Archives.Zip.ZipArchive.OpenArchive(volumes, options)
+                    : ArchiveFactory.OpenArchive(volumes, options);
                 if (metadataOnly) foreach (var entry in splitArchive.Entries) yield return (entry, entry.OpenEntryStream);
                 else foreach (var item in ReadEntries(splitArchive)) yield return item;
             }
@@ -492,7 +525,9 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         else
         {
             var rarParts = RarVolumeSet.IsPart(archivePath) ? RarVolumeSet.FindParts(archivePath) : null;
-            using var archive = TransientFileAccess.Run(() => rarParts is null ? ArchiveFactory.OpenArchive(archivePath, options) : ArchiveFactory.OpenArchive(rarParts, options), token);
+            using var archive = TransientFileAccess.Run<IArchive>(() => rarParts is not null ? ArchiveFactory.OpenArchive(rarParts, options)
+                : GetExtensionHint(archivePath) == "zip" ? SharpCompress.Archives.Zip.ZipArchive.OpenArchive(archivePath, options)
+                : ArchiveFactory.OpenArchive(archivePath, options), token);
             if (archive.Type == ArchiveType.Rar)
             {
                 var incomplete = archive.Entries.OfType<SharpCompress.Archives.Rar.RarArchiveEntry>().FirstOrDefault(entry => !entry.IsComplete);

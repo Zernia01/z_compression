@@ -107,6 +107,13 @@ On Windows 11, the Explorer compression command may appear under `Show more opti
 
 Generative AI tools, including OpenAI ChatGPT and Codex, were used as assistants during parts of this project's development and documentation. AI-generated suggestions and content were reviewed and edited by the project author before being incorporated.
 
+## 공통 암호·압축 방식·폴더 정리 (1.2.11)
+
+- **공통 암호로 일괄 해제**: 여러 압축 파일을 선택한 뒤 암호를 한 번 입력합니다. 분할 ZIP·RAR은 같은 폴더의 조각을 찾아 한 번만 해제합니다. 암호가 다르거나 틀린 파일은 다시 입력할 수 있으며 암호는 설정 파일에 저장하지 않습니다.
+- **새 압축 → 암호 사용**: 체크 후 암호를 입력하면 ZIP은 AES-256으로, RAR은 설치된 WinRAR로 암호화합니다. 7Z·TAR 등 다른 형식은 암호 생성 대상이 아닙니다. ZIP의 파일명은 암호화하지 않습니다.
+- **설정 → 기본 설정 → 최상위 폴더가 하나면 중복 폴더 만들지 않기**: 우클릭·바로 풀기·일괄 해제에서 단일 최상위 폴더는 그대로 꺼냅니다. 여러 항목이나 단일 파일은 기존처럼 압축 파일 이름의 폴더에 풉니다. 충돌 시 번호를 붙여 기존 결과를 보존합니다.
+- **전부 하나로 압축하기 / 각각 압축하기**: 탐색기에서 여러 파일·폴더를 선택한 뒤 원하는 우클릭 메뉴를 사용하세요. 앱으로 끌어온 뒤 새 압축 창에서 각각 압축을 체크할 수도 있습니다. 각각 압축은 선택한 최상위 항목마다 파일 하나를 만듭니다. 기본 단축키는 각각 Ctrl+N / Ctrl+I이며 설정에서 변경하면 우클릭 메뉴의 문자 키도 반영됩니다.
+
 ## 압축 파일의 파일명 인코딩 (1.2.10)
 
 압축 파일을 열고 위쪽의 **파일명 인코딩** 메뉴에서 일본어 Shift-JIS/CP932, 한국어 CP949, 중국어 GBK·GB18030·Big5 등을 선택할 수 있습니다. 목록을 즉시 새로 읽으며 파일 열기, 압축 풀기, 드래그 해제에도 같은 설정이 적용됩니다. 선택은 앱을 실행하는 동안 해당 압축 파일에만 적용됩니다. ZIP에 UTF-8로 명시된 이름은 그대로 읽습니다.

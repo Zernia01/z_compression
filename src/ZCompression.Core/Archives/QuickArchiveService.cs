@@ -3,12 +3,13 @@ namespace ZCompression.Core.Archives;
 public sealed class QuickArchiveService(IArchiveEngine engine)
 {
     public async Task<string> CompressAsync(IReadOnlyList<string> sources, ArchiveFormat format = ArchiveFormat.Zip,
-        CompressionPreset level = CompressionPreset.High, IProgress<ArchiveProgress>? progress = null, CancellationToken cancellationToken = default)
+        CompressionPreset level = CompressionPreset.High, IProgress<ArchiveProgress>? progress = null, CancellationToken cancellationToken = default, string? destinationDirectory = null, string? password = null)
     {
         if (sources.Count == 0) throw new ArgumentException("At least one source is required.", nameof(sources));
         var paths = sources.Select(Path.GetFullPath).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         var first = paths[0].TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        var parent = Path.GetDirectoryName(first) ?? throw new ArgumentException("Select a file or folder, rather than a drive root.", nameof(sources));
+        var parent = destinationDirectory is null ? Path.GetDirectoryName(first) ?? throw new ArgumentException("Select a file or folder, rather than a drive root.", nameof(sources)) : Path.GetFullPath(destinationDirectory);
+        Directory.CreateDirectory(parent);
         var name = Directory.Exists(first) ? Path.GetFileName(first) : Path.GetFileNameWithoutExtension(first);
         var extension = format switch
         {
@@ -19,7 +20,7 @@ public sealed class QuickArchiveService(IArchiveEngine engine)
         var temporary = Path.Combine(parent, $".z-compression-{Guid.NewGuid():N}{extension}");
         try
         {
-            await engine.CompressAsync(new CompressionRequest(paths, temporary, format, level), progress, cancellationToken);
+            await engine.CompressAsync(new CompressionRequest(paths, temporary, format, level, password), progress, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
             // Move with overwrite disabled: concurrent invocations also preserve existing files.
             return Publish(parent, string.IsNullOrWhiteSpace(name) ? "Archive" : name, extension, temporary, isDirectory: false, cancellationToken);
@@ -28,7 +29,7 @@ public sealed class QuickArchiveService(IArchiveEngine engine)
     }
 
     public async Task<string> ExtractAsync(string archivePath, string? password = null,
-        IProgress<ArchiveProgress>? progress = null, CancellationToken cancellationToken = default, string? destinationDirectory = null, System.Text.Encoding? legacyEncoding = null)
+        IProgress<ArchiveProgress>? progress = null, CancellationToken cancellationToken = default, string? destinationDirectory = null, System.Text.Encoding? legacyEncoding = null, bool avoidDuplicateFolder = false)
     {
         var archive = Path.GetFullPath(archivePath);
         var parent = destinationDirectory is null ? Path.GetDirectoryName(archive)! : Path.GetFullPath(destinationDirectory);
@@ -39,6 +40,9 @@ public sealed class QuickArchiveService(IArchiveEngine engine)
         {
             await engine.ExtractAsync(new ExtractionRequest(archive, staging, password, legacyEncoding), progress, cancellationToken);
             cancellationToken.ThrowIfCancellationRequested();
+            var children = Directory.GetFileSystemEntries(staging);
+            if (avoidDuplicateFolder && children.Length == 1 && Directory.Exists(children[0]))
+                return Publish(parent, Path.GetFileName(children[0]), "", children[0], isDirectory: true, cancellationToken);
             return Publish(parent, name, "", staging, isDirectory: true, cancellationToken);
         }
         finally { if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true); }

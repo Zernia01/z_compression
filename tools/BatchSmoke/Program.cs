@@ -89,6 +89,55 @@ internal static class Program
             var splitDialog = new NewArchiveWindow([splitSource], new AppSettings());
             if (splitDialog.SelectedVolumeSize is not null || ((System.Windows.Controls.CheckBox)splitDialog.FindName("SplitEnabled")).IsChecked == true) throw new Exception("Split creation must be opt-in.");
             splitDialog.Close();
+            var preferences = new AppSettings { AvoidDuplicateExtractionFolder = true, CompressSeparatelyShortcut = "Ctrl+I" };
+            var preferencesService = new JsonSettingsService(Path.Combine(root, "new-preferences.json"));
+            await preferencesService.SaveAsync(preferences);
+            var restored = await preferencesService.LoadAsync();
+            if (!restored.AvoidDuplicateExtractionFolder || restored.CompressSeparatelyShortcut != "Ctrl+I") throw new Exception("New preferences were not persisted.");
+            var encryptedVm = new MainViewModel(engine, localization, preferencesService, restored);
+            var passwordPrompts = 0;
+            encryptedVm.RequestArchivePassword = _ => { passwordPrompts++; return "common-password"; };
+            var encryptedArchives = new List<string>();
+            var independentSources = new List<string>();
+            for (var number = 0; number < 2; number++)
+            {
+                var folder = Directory.CreateDirectory(Path.Combine(root, "root" + number)).FullName;
+                await File.WriteAllBytesAsync(Path.Combine(folder, "日本語.bin"), splitBytes);
+                independentSources.Add(folder);
+                var request = new CompressionRequest([folder], Path.Combine(root, "encrypted" + number + ".zip"), ArchiveFormat.Zip, Password: "common-password");
+                if (number == 0)
+                {
+                    await new SplitArchiveService(engine).CompressAsync(request, 1024 * 1024);
+                    encryptedArchives.Add(request.Destination + ".001");
+                    encryptedArchives.Add(request.Destination + ".002");
+                }
+                else
+                {
+                    await engine.CompressAsync(request);
+                    encryptedArchives.Add(request.Destination);
+                }
+            }
+            var encryptedOutput = Path.Combine(root, "shared-password-output");
+            await encryptedVm.ExtractManyAsync(encryptedArchives, encryptedOutput, "wrong-password");
+            if (passwordPrompts != 1 || Directory.GetDirectories(encryptedOutput).Length != 2) throw new Exception("A shared password was not retried once and reused, or split volumes were repeated.");
+            foreach (var number in new[] { 0, 1 })
+                if (!(await File.ReadAllBytesAsync(Path.Combine(encryptedOutput, "root" + number, "日本語.bin"))).SequenceEqual(splitBytes)) throw new Exception("Single-root extraction added a duplicate folder or lost data.");
+            await encryptedVm.ExtractManyAsync(encryptedArchives, Path.Combine(root, "no-password-prompts"), "common-password");
+            if (passwordPrompts != 1) throw new Exception("A supplied common password still prompted.");
+            var separateOutput = Path.Combine(root, "separate-archives");
+            await encryptedVm.CompressSeparatelyAsync(independentSources, separateOutput, ArchiveFormat.Zip, password: "common-password");
+            var separateArchives = Directory.GetFiles(separateOutput, "*.zip");
+            if (separateArchives.Length != 2) throw new Exception("Separate compression did not produce one archive per source.");
+            foreach (var archive in separateArchives)
+                if ((await engine.ListAsync(archive)).Count(entry => !entry.IsDirectory) != 1) throw new Exception("Separate compression combined unrelated sources.");
+            var combined = await new QuickArchiveService(engine).CompressAsync(independentSources, destinationDirectory: Path.Combine(root, "combined-archive"));
+            if ((await engine.ListAsync(combined)).Count(entry => !entry.IsDirectory) != 2) throw new Exception("Combined compression lost selected sources.");
+            var passwordDialog = new NewArchiveWindow(independentSources, preferences, separate: true);
+            if (((System.Windows.Controls.CheckBox)passwordDialog.FindName("SeparateEnabled")).IsChecked != true ||
+                ((System.Windows.Controls.CheckBox)passwordDialog.FindName("PasswordEnabled")).IsChecked == true ||
+                ((System.Windows.Controls.PasswordBox)passwordDialog.FindName("PasswordBox")).IsEnabled)
+                throw new Exception("Compression mode or password checkbox initialization failed.");
+            passwordDialog.Close();
             vm.PropertyChanged += (_, e) => { if (e.PropertyName == "Status" && vm.Status.Contains("(2/3)", StringComparison.Ordinal)) vm.Cancel(); };
             var canceled = Path.Combine(root, "canceled");
             try { await vm.ExtractManyAsync(archives, canceled); throw new Exception("Batch cancellation was ignored."); }

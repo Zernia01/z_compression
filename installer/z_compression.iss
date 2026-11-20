@@ -1,5 +1,5 @@
 #define MyAppName "z_compression"
-#define MyAppVersion "1.2.10"
+#define MyAppVersion "1.2.11"
 #define MyAppPublisher "z_compression contributors"
 #define MyAppExeName "z_compression.exe"
 
@@ -87,6 +87,14 @@ Root: HKCU; Subkey: "Software\Classes\Directory\shell\ZCompression.Compress"; Va
 Root: HKCU; Subkey: "Software\Classes\Directory\shell\ZCompression.Compress"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName},0"
 Root: HKCU; Subkey: "Software\Classes\Directory\shell\ZCompression.Compress"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Player"
 Root: HKCU; Subkey: "Software\Classes\Directory\shell\ZCompression.Compress\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" --compress-here ""%1"""
+Root: HKCU; Subkey: "Software\Classes\*\shell\ZCompression.CompressSeparately"; ValueType: string; ValueName: "MUIVerb"; ValueData: "각각 압축하기 (&I)"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\*\shell\ZCompression.CompressSeparately"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKCU; Subkey: "Software\Classes\*\shell\ZCompression.CompressSeparately"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Player"
+Root: HKCU; Subkey: "Software\Classes\*\shell\ZCompression.CompressSeparately\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" --compress-each ""%1"""
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\ZCompression.CompressSeparately"; ValueType: string; ValueName: "MUIVerb"; ValueData: "각각 압축하기 (&I)"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\ZCompression.CompressSeparately"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName},0"
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\ZCompression.CompressSeparately"; ValueType: string; ValueName: "MultiSelectModel"; ValueData: "Player"
+Root: HKCU; Subkey: "Software\Classes\Directory\shell\ZCompression.CompressSeparately\command"; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" --compress-each ""%1"""
 
 Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.zip\shell\ZCompression.Extract"; ValueType: string; ValueName: "MUIVerb"; ValueData: "z_compression으로 폴더에 풀기"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\SystemFileAssociations\.zip\shell\ZCompression.Extract"; ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#MyAppExeName},0"

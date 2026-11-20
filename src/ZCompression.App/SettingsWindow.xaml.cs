@@ -27,6 +27,7 @@ public partial class SettingsWindow : Window
         SelectTag(CpuThreadsBox, viewModel.Settings.CpuThreads.ToString(System.Globalization.CultureInfo.InvariantCulture));
         SelectTag(PriorityBox, viewModel.Settings.OperationPriority);
         AutomaticUpdatesBox.IsChecked = viewModel.Settings.CheckForUpdatesAtStartup;
+        AvoidDuplicateFolderBox.IsChecked = viewModel.Settings.AvoidDuplicateExtractionFolder;
         RefreshShortcutButtons();
     }
 
@@ -95,6 +96,10 @@ public partial class SettingsWindow : Window
         button.Content = LocalizationManager.Instance["PressShortcut"];
         Keyboard.Focus(button);
     }
+    private void OnExtractionFolderChanged(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel is not null) _viewModel.SetAvoidDuplicateExtractionFolder(AvoidDuplicateFolderBox.IsChecked == true);
+    }
 
     private async void OnShortcutKeyDown(object sender, KeyEventArgs e)
     {
@@ -111,18 +116,24 @@ public partial class SettingsWindow : Window
             return;
         }
 
-        var otherShortcut = Equals(button.Tag, "compress") ? _viewModel.Settings.ExtractShortcut : _viewModel.Settings.CompressShortcut;
+        var shortcuts = new Dictionary<string, string>
+        {
+            ["compress"] = _viewModel.Settings.CompressShortcut,
+            ["extract"] = _viewModel.Settings.ExtractShortcut,
+            ["separate"] = _viewModel.Settings.CompressSeparatelyShortcut,
+        };
+        var target = (string)button.Tag;
         var menuKey = ExplorerMenuShortcut.GetAccessKey(shortcut);
-        if (!string.IsNullOrEmpty(shortcut) && (shortcut.Equals(otherShortcut, StringComparison.OrdinalIgnoreCase) ||
-            (menuKey is not null && menuKey == ExplorerMenuShortcut.GetAccessKey(otherShortcut))))
+        if (!string.IsNullOrEmpty(shortcut) && shortcuts.Where(pair => pair.Key != target).Any(pair =>
+            shortcut.Equals(pair.Value, StringComparison.OrdinalIgnoreCase) ||
+            (menuKey is not null && menuKey == ExplorerMenuShortcut.GetAccessKey(pair.Value))))
         {
             ShortcutValidationText.Text = LocalizationManager.Instance["ShortcutConflict"];
             return;
         }
 
-        var compress = Equals(button.Tag, "compress") ? shortcut : _viewModel.Settings.CompressShortcut;
-        var extract = Equals(button.Tag, "extract") ? shortcut : _viewModel.Settings.ExtractShortcut;
-        _viewModel.SetShortcuts(compress, extract);
+        shortcuts[target] = shortcut;
+        _viewModel.SetShortcuts(shortcuts["compress"], shortcuts["extract"], shortcuts["separate"]);
         ShortcutValidationText.Text = string.Empty;
         FinishShortcutCapture();
         try
@@ -146,6 +157,7 @@ public partial class SettingsWindow : Window
     {
         CompressShortcutButton.Content = DisplayShortcut(_viewModel.Settings.CompressShortcut);
         ExtractShortcutButton.Content = DisplayShortcut(_viewModel.Settings.ExtractShortcut);
+        SeparateShortcutButton.Content = DisplayShortcut(_viewModel.Settings.CompressSeparatelyShortcut);
     }
 
     private static string DisplayShortcut(string shortcut) => string.IsNullOrWhiteSpace(shortcut) ? LocalizationManager.Instance["ShortcutNone"] : shortcut;

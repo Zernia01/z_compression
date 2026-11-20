@@ -7,9 +7,44 @@ namespace ZCompression.Core.Archives;
 
 public static class ZipIntegrityVerifier
 {
-    public static void Verify(string path, IProgress<ArchiveProgress>? progress = null, CancellationToken token = default, int? expectedCount = null, long? expectedBytes = null)
+    public static void Verify(string path, IProgress<ArchiveProgress>? progress = null, CancellationToken token = default, int? expectedCount = null, long? expectedBytes = null, string? password = null)
     {
         token.ThrowIfCancellationRequested();
+        if (!string.IsNullOrEmpty(password))
+        {
+            using var zip = new ICSharpCode.SharpZipLib.Zip.ZipFile(path) { Password = password };
+            var items = zip.Cast<ICSharpCode.SharpZipLib.Zip.ZipEntry>().ToArray();
+            var size = items.Sum(entry => entry.Size);
+            if (expectedCount is { } countCheck && countCheck != items.Length || expectedBytes is { } byteCheck && byteCheck != size)
+                throw new InvalidDataException("Encrypted ZIP entry count or size does not match selected sources.");
+            var timer = Stopwatch.StartNew();
+            var copyBuffer = new byte[1024 * 1024];
+            long readTotal = 0;
+            var lastUpdate = 0L;
+            void Update(string name, int completed) => progress?.Report(new ArchiveProgress(90 + (size == 0 ? 9.5 : readTotal * 9.5 / size), name, completed, items.Length, readTotal, size, readTotal / Math.Max(timer.Elapsed.TotalSeconds, 0.001), timer.Elapsed, IsVerifying: true));
+            Update(Path.GetFileName(path), 0);
+            foreach (var entry in items)
+            {
+                token.ThrowIfCancellationRequested();
+                using var content = zip.GetInputStream(entry);
+                long length = 0;
+                var checksum = new Crc32();
+                int read;
+                while ((read = content.Read(copyBuffer, 0, copyBuffer.Length)) > 0)
+                {
+                    token.ThrowIfCancellationRequested();
+                    length += read; readTotal += read;
+                    checksum.Append(copyBuffer.AsSpan(0, read));
+                    if (timer.ElapsedMilliseconds - lastUpdate >= 100) { Update(entry.Name, 0); lastUpdate = timer.ElapsedMilliseconds; }
+                }
+                // AES AE-2 entries authenticate their payload instead of storing a CRC.
+                if (length != entry.Size || (entry.Crc != 0 && checksum.GetCurrentHashAsUInt32() != (uint)entry.Crc))
+                    throw new InvalidDataException("Encrypted ZIP integrity verification failed: " + entry.Name);
+            }
+            token.ThrowIfCancellationRequested();
+            Update(Path.GetFileName(path), items.Length);
+            return;
+        }
         using var input = File.OpenRead(path);
         using var archive = new ZipArchive(input, ZipArchiveMode.Read, false, System.Text.Encoding.UTF8);
         var entries = archive.Entries;
