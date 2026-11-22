@@ -40,6 +40,16 @@ internal static class Program
             var engine = new RecordingEngine();
             var vm = new MainViewModel(engine, localization, settingsService, new AppSettings());
             var settingsWindow = new SettingsWindow(vm);
+            var sharedPassword = (CheckBox)settingsWindow.FindName("SharedExtractionPasswordBox");
+            if (sharedPassword.IsChecked == true || vm.Settings.UseSharedPasswordForExtraction) throw new Exception("Shared passwords must remain opt-in.");
+            sharedPassword.IsChecked = true;
+            await vm.SaveSettingsAsync();
+            var sharedSettings = await settingsService.LoadAsync();
+            if (!sharedSettings.UseSharedPasswordForExtraction) throw new Exception("Shared-password setting was not saved.");
+            var sharedWindow = new SettingsWindow(new MainViewModel(engine, localization, settingsService, sharedSettings));
+            if (((CheckBox)sharedWindow.FindName("SharedExtractionPasswordBox")).IsChecked != true) throw new Exception("Shared-password checkbox did not reload.");
+            sharedWindow.Close();
+            sharedPassword.IsChecked = false;
             var levels = (ComboBox)settingsWindow.FindName("DefaultLevelBox");
             var formats = (ComboBox)settingsWindow.FindName("DefaultFormatBox");
             formats.SelectedItem = formats.Items.Cast<ComboBoxItem>().Single(item => Equals(item.Tag, "SevenZip"));

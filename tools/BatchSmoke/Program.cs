@@ -141,6 +141,32 @@ internal static class Program
                 if (!(await File.ReadAllBytesAsync(Path.Combine(encryptedOutput, "root" + number, "日本語.bin"))).SequenceEqual(splitBytes)) throw new Exception("Single-root extraction added a duplicate folder or lost data.");
             await encryptedVm.ExtractManyAsync(encryptedArchives, Path.Combine(root, "no-password-prompts"), "common-password");
             if (passwordPrompts != 1) throw new Exception("A supplied common password still prompted.");
+            encryptedVm.SetUseSharedPasswordForExtraction(true);
+            await encryptedVm.SaveSettingsAsync();
+            if (!(await preferencesService.LoadAsync()).UseSharedPasswordForExtraction) throw new Exception("Shortcut password preference did not persist.");
+            var sharedPrompts = 0;
+            encryptedVm.RequestArchivePassword = title =>
+            {
+                if (title != localization["ExtractSharedPassword"]) throw new Exception("Shortcut did not request a shared password.");
+                sharedPrompts++;
+                return "common-password";
+            };
+            await encryptedVm.ExtractManyAsync(encryptedArchives, Path.Combine(root, "configured-shortcut-password"));
+            if (sharedPrompts != 1) throw new Exception("Shortcut extraction did not ask exactly once for grouped encrypted volumes.");
+            await encryptedVm.ExtractManyAsync(encryptedArchives, Path.Combine(root, "explicit-shared-password"), "common-password");
+            if (sharedPrompts != 1) throw new Exception("An explicit password prompted twice when the setting was enabled.");
+            await encryptedVm.ExtractAsync(encryptedArchives[^1], Path.Combine(root, "configured-single-extraction"));
+            if (sharedPrompts != 2) throw new Exception("The app extraction shortcut ignored the shared-password setting.");
+            encryptedVm.RequestArchivePassword = _ => null;
+            var canceledPasswordOutput = Path.Combine(root, "canceled-password");
+            try { await encryptedVm.ExtractManyAsync(encryptedArchives, canceledPasswordOutput); throw new Exception("Canceled password was ignored."); }
+            catch (OperationCanceledException) { }
+            if (encryptedVm.IsBusy || Directory.Exists(canceledPasswordOutput)) throw new Exception("Canceled password started extraction or left the UI busy.");
+            var ordinaryVm = new MainViewModel(engine, localization, preferencesService, preferences);
+            var ordinaryPrompts = 0;
+            ordinaryVm.RequestArchivePassword = _ => { ordinaryPrompts++; return "common-password"; };
+            await ordinaryVm.ExtractManyAsync(encryptedArchives, Path.Combine(root, "ordinary-passwords"));
+            if (ordinaryPrompts != 2) throw new Exception("Disabling the setting changed per-archive password prompts.");
             var separateOutput = Path.Combine(root, "separate-archives");
             await encryptedVm.CompressSeparatelyAsync(independentSources, separateOutput, ArchiveFormat.Zip, password: "common-password");
             var separateArchives = Directory.GetFiles(separateOutput, "*.zip");

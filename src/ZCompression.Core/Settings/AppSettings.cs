@@ -22,6 +22,7 @@ public sealed record AppSettings
     public string ExtractShortcut { get; init; } = "Ctrl+E";
     public string CompressSeparatelyShortcut { get; init; } = "Ctrl+I";
     public bool AvoidDuplicateExtractionFolder { get; init; }
+    public bool UseSharedPasswordForExtraction { get; init; }
 }
 
 public interface ISettingsService

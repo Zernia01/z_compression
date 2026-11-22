@@ -1,5 +1,5 @@
 #define MyAppName "z_compression"
-#define MyAppVersion "1.2.12"
+#define MyAppVersion "1.2.13"
 #define MyAppPublisher "z_compression contributors"
 #define MyAppExeName "z_compression.exe"
 

@@ -131,6 +131,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public async Task ExtractAsync(string archive, string destination) => await WithOperation(async token =>
     {
         Status = _localization["Extracting"];
+        if (RequestConfiguredSharedPassword() is { } shared) _archivePasswords[Path.GetFullPath(archive)] = shared;
         await WithArchivePassword(archive, password => _engine.ExtractAsync(new ExtractionRequest(archive, destination, password, GetArchiveEncoding(archive).Encoding), CreateProgress(), token));
         Status = _localization["ExtractionComplete"];
     });
@@ -169,6 +170,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public async Task QuickExtractAsync(string archive) => await WithOperation(async token =>
     {
         Status = _localization["Extracting"];
+        if (RequestConfiguredSharedPassword() is { } shared) _archivePasswords[Path.GetFullPath(archive)] = shared;
         await WithArchivePassword(archive, password => new QuickArchiveService(_engine).ExtractAsync(archive, password, CreateProgress(), token, legacyEncoding: GetArchiveEncoding(archive).Encoding, avoidDuplicateFolder: Settings.AvoidDuplicateExtractionFolder));
         Status = _localization["ExtractionComplete"];
     });
@@ -177,6 +179,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         var paths = archives.Select(SplitArchiveService.GetFirstVolume).Select(Path.GetFullPath).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         if (paths.Length == 0 || paths.Any(path => !File.Exists(path) || !IsArchivePath(path))) throw new InvalidDataException("Select supported archives.");
+        sharedPassword ??= RequestConfiguredSharedPassword();
         IProgress<ArchiveProgress> progress = CreateProgress();
         for (var index = 0; index < paths.Length; index++)
         {
@@ -198,6 +201,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
     });
 
     private sealed class InlineProgress<T>(Action<T> report) : IProgress<T> { public void Report(T value) => report(value); }
+    private string? RequestConfiguredSharedPassword()
+    {
+        if (!Settings.UseSharedPasswordForExtraction) return null;
+        var password = RequestArchivePassword?.Invoke(_localization["ExtractSharedPassword"]);
+        if (string.IsNullOrEmpty(password)) throw new OperationCanceledException();
+        return password;
+    }
     public async Task CompressSeparatelyAsync(IReadOnlyList<string> sources, string? destination = null, ArchiveFormat? format = null, CompressionPreset? level = null, string? password = null, long? volumeSize = null) => await WithOperation(async token =>
     {
         var paths = sources.Select(Path.GetFullPath).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
@@ -306,6 +316,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public void SetDefaultCompressionLevel(CompressionPreset level) => Settings = Settings with { DefaultCompressionLevel = level.ToString().ToLowerInvariant() };
     public void SetDefaultArchiveFormat(ArchiveFormat format) => Settings = Settings with { DefaultArchiveFormat = format.ToString().ToLowerInvariant() };
     public void SetAvoidDuplicateExtractionFolder(bool enabled) => Settings = Settings with { AvoidDuplicateExtractionFolder = enabled };
+    public void SetUseSharedPasswordForExtraction(bool enabled) => Settings = Settings with { UseSharedPasswordForExtraction = enabled };
     public void SetTheme(string theme) => Settings = Settings with { Theme = theme };
     public void SetCpuThreads(int threads) => Settings = Settings with { CpuThreads = Math.Max(0, threads) };
     public void SetOperationPriority(string priority) => Settings = Settings with { OperationPriority = priority };

@@ -107,6 +107,10 @@ On Windows 11, the Explorer compression command may appear under `Show more opti
 
 Generative AI tools, including OpenAI ChatGPT and Codex, were used as assistants during parts of this project's development and documentation. AI-generated suggestions and content were reviewed and edited by the project author before being incorporated.
 
+## 단축키·우클릭의 공통 암호 설정 (1.2.13)
+
+**설정 → 단축키 → 단축키·우클릭 해제 시 공통 암호 사용**을 체크하면 탐색기의 '폴더에 풀기', 메뉴 문자 키, 앱의 압축 풀기 단축키와 일괄 해제에서도 작업 시작 시 암호를 한 번 입력합니다. 선택한 압축 파일·분할 조각을 정리한 뒤 그 암호로 일괄 해제하며, 다른 암호가 필요한 파일은 재입력할 수 있습니다. 취소하면 파일을 풀지 않습니다. 체크 상태만 저장하며 암호는 설정 파일에 저장하지 않습니다.
+
 ## 파일명 자동 판별·해제 기본 위치 (1.2.12)
 
 ZIP에 UTF-8로 표시된 이름을 우선 사용하며, 표시가 없는 이름은 파일명 바이트를 표본으로 모아 일본어 CP932, 한국어 CP949, 중국어 GBK·Big5 등의 인코딩을 자동 판별합니다. 목록, 파일 열기, 일반 압축 풀기, 우클릭·단축키·일괄 해제와 분할 ZIP에서 같은 판별을 사용합니다. UTF-8과 레거시 이름이 섞인 ZIP도 UTF-8 항목을 보존합니다. 파일 내용은 인코딩을 판별하기 위해 압축 해제하지 않습니다.

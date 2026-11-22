@@ -28,6 +28,7 @@ public partial class SettingsWindow : Window
         SelectTag(PriorityBox, viewModel.Settings.OperationPriority);
         AutomaticUpdatesBox.IsChecked = viewModel.Settings.CheckForUpdatesAtStartup;
         AvoidDuplicateFolderBox.IsChecked = viewModel.Settings.AvoidDuplicateExtractionFolder;
+        SharedExtractionPasswordBox.IsChecked = viewModel.Settings.UseSharedPasswordForExtraction;
         RefreshShortcutButtons();
     }
 
@@ -99,6 +100,10 @@ public partial class SettingsWindow : Window
     private void OnExtractionFolderChanged(object sender, RoutedEventArgs e)
     {
         if (_viewModel is not null) _viewModel.SetAvoidDuplicateExtractionFolder(AvoidDuplicateFolderBox.IsChecked == true);
+    }
+    private void OnSharedExtractionPasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel is not null) _viewModel.SetUseSharedPasswordForExtraction(SharedExtractionPasswordBox.IsChecked == true);
     }
 
     private async void OnShortcutKeyDown(object sender, KeyEventArgs e)
