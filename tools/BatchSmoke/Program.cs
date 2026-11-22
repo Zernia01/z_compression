@@ -63,7 +63,24 @@ internal static class Program
             }
             var localization = new JsonLocalizationService(Path.Combine(AppContext.BaseDirectory, "Localization"), "ko-KR");
             LocalizationManager.Instance.Initialize(localization);
+            foreach (var archive in archives)
+                if (((Microsoft.Win32.OpenFolderDialog)typeof(MainWindow).GetMethod("CreateExtractionFolderDialog", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!.Invoke(null, [archive])!).InitialDirectory != Path.GetDirectoryName(archive))
+                    throw new Exception("Extraction defaults to a recent folder instead of the archive's own directory.");
             var vm = new MainViewModel(engine, localization, new JsonSettingsService(Path.Combine(root, "settings.json")), new AppSettings());
+            var legacyDirectory = Directory.CreateDirectory(Path.Combine(root, "legacy-shortcut")).FullName;
+            var legacyArchive = Path.Combine(legacyDirectory, "legacy.zip");
+            var japanese = ZCompression.Core.Encoding.LegacyEncodingService.Choices.Single(choice => choice.Id == "cp932").Encoding!;
+            using (var zip = new System.IO.Compression.ZipArchive(File.Create(legacyArchive), System.IO.Compression.ZipArchiveMode.Create, false, japanese))
+            using (var writer = new StreamWriter(zip.CreateEntry("ソフトウェア/設定を登録.reg").Open())) writer.Write("filename test");
+            await vm.OpenArchiveAsync(legacyArchive);
+            if (vm.Entries.Single().Path != "ソフトウェア/設定を登録.reg") throw new Exception("Archive UI did not auto-detect filename encoding.");
+            var normalOutput = Path.Combine(legacyDirectory, "normal");
+            await vm.ExtractAsync(legacyArchive, normalOutput);
+            await vm.QuickExtractAsync(legacyArchive);
+            await vm.ExtractManyAsync([legacyArchive]);
+            foreach (var folder in new[] { normalOutput, Path.Combine(legacyDirectory, "legacy"), Path.Combine(legacyDirectory, "legacy (2)") })
+                if (await File.ReadAllTextAsync(Path.Combine(folder, "ソフトウェア", "設定を登録.reg")) != "filename test")
+                    throw new Exception("Normal, shortcut or batch extraction changed filename encoding or destination.");
             var destination = Directory.CreateDirectory(Path.Combine(root, "output")).FullName;
             await vm.ExtractManyAsync([.. archives, archives[0]], destination);
             foreach (var format in new[] { ArchiveFormat.Zip, ArchiveFormat.SevenZip, ArchiveFormat.TarGZip })

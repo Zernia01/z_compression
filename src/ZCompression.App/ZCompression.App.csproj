@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <Content Include="..\..\licenses\UTF.Unknown-MPL-1.1.txt" Link="Licenses\UTF.Unknown-MPL-1.1.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true"/>
     <Content Include="..\..\THIRD_PARTY_NOTICES.md" Link="THIRD_PARTY_NOTICES.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true"/>
     <ProjectReference Include="..\ZCompression.Core\ZCompression.Core.csproj" />
     <ProjectReference Include="..\ZCompression.Update\ZCompression.Update.csproj" />

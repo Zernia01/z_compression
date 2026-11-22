@@ -107,6 +107,12 @@ On Windows 11, the Explorer compression command may appear under `Show more opti
 
 Generative AI tools, including OpenAI ChatGPT and Codex, were used as assistants during parts of this project's development and documentation. AI-generated suggestions and content were reviewed and edited by the project author before being incorporated.
 
+## 파일명 자동 판별·해제 기본 위치 (1.2.12)
+
+ZIP에 UTF-8로 표시된 이름을 우선 사용하며, 표시가 없는 이름은 파일명 바이트를 표본으로 모아 일본어 CP932, 한국어 CP949, 중국어 GBK·Big5 등의 인코딩을 자동 판별합니다. 목록, 파일 열기, 일반 압축 풀기, 우클릭·단축키·일괄 해제와 분할 ZIP에서 같은 판별을 사용합니다. UTF-8과 레거시 이름이 섞인 ZIP도 UTF-8 항목을 보존합니다. 파일 내용은 인코딩을 판별하기 위해 압축 해제하지 않습니다.
+
+일반 압축 풀기의 위치 선택 창은 최근 폴더 대신 해당 압축 파일이 있는 폴더에서 열립니다. 일괄·공통 암호·우클릭 해제는 각 압축 파일이 있는 폴더에 결과를 만듭니다. 명확한 인코딩 정보가 없는 아주 짧은 이름은 오판할 수 있으므로, 필요하면 **파일명 인코딩**에서 수동으로 선택하세요. 이미 깨진 이름으로 저장된 출력 파일은 원본 압축에서 다시 풀어야 합니다.
+
 ## 공통 암호·압축 방식·폴더 정리 (1.2.11)
 
 - **공통 암호로 일괄 해제**: 여러 압축 파일을 선택한 뒤 암호를 한 번 입력합니다. 분할 ZIP·RAR은 같은 폴더의 조각을 찾아 한 번만 해제합니다. 암호가 다르거나 틀린 파일은 다시 입력할 수 있으며 암호는 설정 파일에 저장하지 않습니다.

@@ -1,5 +1,7 @@
 # Third-party notices
 
+Filename character-set detection uses UTF.Unknown 2.8.0 by Julian Verdurmen, Rustam Sayfutdinov, Rudi Pettazzi, Shy Shalom and contributors, under the Mozilla Public License 1.1. The unmodified library source is available at https://github.com/CharsetDetector/UTF-unknown/tree/4654fbf0cdb47705e74a2c74bae20d486eb23fa8. A copy of its license is distributed as Licenses/UTF.Unknown-MPL-1.1.txt.
+
 Encrypted ZIP writing and authentication use SharpZipLib 1.4.2, Copyright © 2000-2022 SharpZipLib Contributors, under the MIT License. https://github.com/icsharpcode/SharpZipLib
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:

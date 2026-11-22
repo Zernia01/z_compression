@@ -11,7 +11,8 @@ public static class LegacyEncodingService
         System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
         Choices =
         [
-            new("default", "UTF-8 (default)", null),
+            new("default", "Auto detect", null),
+            new("utf-8", "UTF-8", System.Text.Encoding.UTF8),
             new("cp949", "한국어 CP949", System.Text.Encoding.GetEncoding(949)),
             new("euc-kr", "한국어 EUC-KR", System.Text.Encoding.GetEncoding(51949)),
             new("cp932", "日本語 Shift-JIS / CP932", System.Text.Encoding.GetEncoding(932)),

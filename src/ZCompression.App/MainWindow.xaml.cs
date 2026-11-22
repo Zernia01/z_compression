@@ -59,10 +59,8 @@ public partial class MainWindow : Window
             if (passwordDialog.ShowDialog() != true) return;
             sharedPassword = passwordDialog.Password;
         }
-        var destination = SelectFolder(LocalizationManager.Instance["SelectExtractionDestination"]);
-        if (destination is not null)
-            await RunWithProgressAsync(LocalizationManager.Instance["ExtractMany"], $"{dialog.FileNames.Length}", true,
-                () => _viewModel.ExtractManyAsync(dialog.FileNames, destination, sharedPassword));
+        await RunWithProgressAsync(LocalizationManager.Instance["ExtractMany"], $"{dialog.FileNames.Length}", true,
+            () => _viewModel.ExtractManyAsync(dialog.FileNames, sharedPassword: sharedPassword));
     }
 
     private async Task ExtractArchiveAsync()
@@ -74,8 +72,8 @@ public partial class MainWindow : Window
             if (archive.ShowDialog(this) != true) return;
             archivePath = archive.FileName;
         }
-        var destination = SelectFolder(LocalizationManager.Instance["SelectExtractionDestination"]);
-        if (destination is not null) await RunWithProgressAsync(LocalizationManager.Instance["ExtractAction"], Path.GetFileName(archivePath), true, () => _viewModel.ExtractAsync(archivePath, destination));
+        var dialog = CreateExtractionFolderDialog(archivePath);
+        if (dialog.ShowDialog(this) == true) await RunWithProgressAsync(LocalizationManager.Instance["ExtractAction"], Path.GetFileName(archivePath), true, () => _viewModel.ExtractAsync(archivePath, dialog.FolderName));
     }
 
     private async void OnNewArchive(object sender, RoutedEventArgs e) => await CreateArchiveFromSourcesAsync();
@@ -389,5 +387,9 @@ public partial class MainWindow : Window
     }
 
     private static OpenFileDialog ArchiveOpenDialog() => new() { Filter = $"{LocalizationManager.Instance["Archives"]}|*.zip;*.7z;*.rar;*.tar;*.gz;*.tgz;*.bz2;*.xz;*.zst;*.001|{LocalizationManager.Instance["AllFiles"]}|*.*", CheckFileExists = true };
-    private static string? SelectFolder(string title) { var dialog = new OpenFolderDialog { Title = title }; return dialog.ShowDialog() == true ? dialog.FolderName : null; }
+    internal static OpenFolderDialog CreateExtractionFolderDialog(string archivePath) => new()
+    {
+        Title = LocalizationManager.Instance["SelectExtractionDestination"],
+        InitialDirectory = Path.GetDirectoryName(Path.GetFullPath(archivePath))!,
+    };
 }

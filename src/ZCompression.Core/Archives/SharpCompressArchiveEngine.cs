@@ -496,7 +496,7 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
 
     private static IEnumerable<(IEntry Entry, Func<Stream> OpenStream)> ReadEntries(string archivePath, string? password, System.Text.Encoding? encoding, bool metadataOnly = false, CancellationToken token = default)
     {
-        var options = CreateReaderOptions(password, encoding, archivePath);
+        var options = CreateReaderOptions(password, encoding, archivePath, token);
         // Compressed TAR requires the streaming reader rather than the raw TAR archive API.
         var compressedTar = new[] { ".tar.gz", ".tgz", ".tar.bz2", ".tar.xz", ".tar.zst" }
             .Any(extension => SplitArchiveService.GetBasePath(archivePath).EndsWith(extension, StringComparison.OrdinalIgnoreCase));
@@ -551,10 +551,12 @@ public sealed class SharpCompressArchiveEngine : IArchiveEngine
         using var reader = SharpCompress.Readers.Tar.TarReader.OpenReader(input, options);
         while (reader.MoveToNextEntry()) yield return (reader.Entry, reader.OpenEntryStream);
     }
-    private static ReaderOptions CreateReaderOptions(string? password, System.Text.Encoding? encoding, string archivePath) => new()
+    private static ReaderOptions CreateReaderOptions(string? password, System.Text.Encoding? encoding, string archivePath, CancellationToken token) => new()
     {
         Password = password,
-        ArchiveEncoding = new ArchiveEncoding { Default = encoding ?? System.Text.Encoding.UTF8 },
+        ArchiveEncoding = encoding is null && GetExtensionHint(archivePath) == "zip"
+            ? ZCompression.Core.Encoding.ZipNameEncodingDetector.Create(archivePath, token)
+            : new ArchiveEncoding { Default = encoding ?? System.Text.Encoding.UTF8 },
         BufferSize = ArchiveReadBufferSize,
         ExtensionHint = GetExtensionHint(archivePath),
     };
